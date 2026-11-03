@@ -26,3 +26,7 @@ App envelope tối đa 64 KiB ký tự; container nhận đến 128 KiB để tr
 Tests: matching/concurrency/lifecycle, relay/membership, stale room, rate/timeout, TURN HMAC, REST health, TCP WebSocket integration. Xem [kết quả](../../docs/TESTING.md).
 
 Cổng mặc định là **8081**; không cần đặt biến PORT. Nếu đổi cổng, cập nhật VITE_API_BASE_URL/VITE_WS_URL tương ứng.
+
+## Docker / Render
+
+Xem [RENDER_DEPLOY.md](RENDER_DEPLOY.md) để sửa lỗi không tìm thấy Dockerfile, cấu hình build context, biến môi trường và tích hợp Vercel HTTPS/WSS. Dockerfile multi-stage nằm ngay trong `source/server`; chỉ dùng file trong module này, không phụ thuộc frontend hoặc thư mục cha. Image tự kích hoạt profile `render`, yêu cầu `ALLOWED_ORIGINS` và bind `0.0.0.0:${PORT:10000}`. Chạy Maven thông thường vẫn dùng cổng local 8081.

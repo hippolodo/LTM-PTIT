@@ -1,0 +1,22 @@
+# This image needs only the Maven project, wrapper and sources.
+**
+!pom.xml
+!mvnw
+!.mvn/
+!.mvn/wrapper/
+!.mvn/wrapper/maven-wrapper.properties
+!src/
+!src/**
+
+# Never send local configuration, credentials or generated output.
+**/target
+**/build
+**/.git
+**/.idea
+**/.env
+**/.env.*
+**/*.log
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
