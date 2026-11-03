@@ -1,0 +1,8 @@
+client/node_modules/
+client/dist/
+client/coverage/
+server/target/
+**/.env
+**/.env.local
+**/.env.*.local
+*.log

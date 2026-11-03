@@ -1,0 +1,8 @@
+server:
+  port: ${PORT:8081}
+randomconnect:
+  allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
+  session-timeout-ms: ${SESSION_TIMEOUT_MS:45000}
+logging:
+  level:
+    org.springframework.web.socket: WARN

@@ -1,0 +1,12 @@
+.tools/
+.tmp/
+__pycache__/
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
