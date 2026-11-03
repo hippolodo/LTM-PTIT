@@ -74,7 +74,7 @@ Trong lần cấu hình Docker này, Codex **không tự commit hoặc push**. T
 git status --short
 git diff
 
-git add source/server/Dockerfile source/server/.dockerignore source/server/RENDER_DEPLOY.md source/server/README.md source/server/.env.example source/server/src/main/resources/application-render.yml source/server/src/main/java/com/randomconnect/config/WebSocketConfig.java source/server/src/test/java/com/randomconnect/RenderProfileIntegrationTest.java source/server/src/test/java/com/randomconnect/WebSocketConfigTest.java
+git add README.md docs/DEPLOYMENT.md source/server/Dockerfile source/server/.dockerignore source/server/RENDER_DEPLOY.md source/server/README.md source/server/.env.example source/server/src/main/resources/application-render.yml source/server/src/main/java/com/randomconnect/config/WebSocketConfig.java source/server/src/test/java/com/randomconnect/RenderProfileIntegrationTest.java source/server/src/test/java/com/randomconnect/WebSocketConfigTest.java
 git commit -m "Configure Docker and Render deployment for backend"
 git remote -v
 ```
@@ -156,4 +156,24 @@ Credential TURN hiện có hạn 10 phút và chưa tự refresh trong cuộc g�
 
 ## 10. Kết quả kiểm tra phiên cấu hình này
 
-Đang kiểm tra build/test và Docker. Kết quả thực tế sẽ được cập nhật sau khi lệnh hoàn tất. Chưa deploy lên tài khoản Render/Vercel hoặc xác minh camera/audio trên Internet.
+Thực hiện ngày **2026-11-04**, múi giờ Asia/Saigon:
+
+| Kiểm tra | Kết quả thực tế |
+|---|---|
+| Maven Wrapper / Java 21 `verify` | **BUILD SUCCESS, 32 tests**, 0 failures/errors/skipped; JAR đã repackage |
+| Các test cũ | 26 tests health, matchmaking, lifecycle, chat/signaling TCP WebSocket và TURN tiếp tục đạt |
+| Test mới | 4 integration tests profile render (bind config, health/CORS và WebSocket origin), 2 tests kiểm tra danh sách origin |
+| JAR chạy thật với profile render và PORT động | Health HTTP 200, JSON giữ nguyên; origin tin cậy được phản hồi đúng, origin lạ HTTP 403 |
+| Thiếu ALLOWED_ORIGINS ở profile render | Tiến trình từ chối khởi động, lỗi nhắc đúng biến bắt buộc |
+| Ngân sách JVM | JAR chạy với MaxRAM=512m và các cờ JVM như image; đây **không phải** kiểm thử cgroup Docker 512 MiB hoặc load test |
+| Docker image build / container run | **Chưa xác minh**: Docker CLI 29.2.1 có sẵn, nhưng engine khởi động rồi trả HTTP 500 ở API `/info` và `/_ping`; build dừng trước khi thực thi Dockerfile. Docker Desktop do phiên này khởi động đã được dừng lại |
+| Render/Vercel thực, TLS/WSS public, media qua Internet | **Chưa deploy/kiểm chứng**; cần cấu hình tài khoản và domain thực theo các mục trên |
+| Git / frontend | Codex không tự commit/push; không sửa source frontend, POM, Java/Spring Boot version hoặc logic nghiệp vụ |
+
+Lần Maven đầu tiên vẫn 32 tests đạt nhưng Surefire cảnh báo chậm thoát fork JVM khi Docker Desktop đang khởi động lỗi. Test HTTP client mới đã được cleanup; sau khi dừng Docker và chạy lại với logging gọn, `verify` hoàn tất khoảng 25 giây, không còn cảnh báo đó. Không đổi timeout để che lỗi và không bỏ qua tests.
+
+Các log/script kiểm tra nằm trong `.tmp/` bị Git ignore. Các tiến trình JAR smoke test đã được dừng; không chiếm cổng backend của người dùng. Dockerfile chỉ đọc file bên trong source/server, không copy artifact từ cache hoặc target của máy Windows.
+
+File mới: Dockerfile, .dockerignore, RENDER_DEPLOY.md, application-render.yml, RenderProfileIntegrationTest.java, WebSocketConfigTest.java. File cập nhật: WebSocketConfig.java, .env.example, README server; README root và docs/DEPLOYMENT.md chỉ được sửa để liên kết hướng dẫn Docker mới, bỏ mô tả cũ rằng chưa có cấu hình Docker.
+
+Trong lúc kiểm tra, Git HEAD đã chuyển sang `926de24` (`add dockerfile`) bởi thao tác bên ngoài phiên Codex. Phần cấu hình/test đã có trong commit đó; ba file tài liệu README.md, docs/DEPLOYMENT.md và RENDER_DEPLOY.md còn cập nhật kết quả cuối chưa commit tại lúc bàn giao. Giữ nguyên commit/thay đổi đó, không reset hay ghi đè lịch sử.

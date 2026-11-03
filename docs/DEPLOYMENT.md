@@ -43,4 +43,4 @@ $env:ALLOWED_ORIGINS = 'https://chat.example.com'
 
 ## Giới hạn vận hành
 
-Một instance RAM; HTTPS/TURN không tự tạo moderation, authentication hoặc bảo vệ DoS. Chỉ demo nội bộ. Chưa có Docker vì không cần cho luồng local và chưa kiểm chứng Docker ở môi trường này.
+Một instance RAM; HTTPS/TURN không tự tạo moderation, authentication hoặc bảo vệ DoS. Chỉ demo nội bộ. Cấu hình Docker backend và đường dẫn Render đã được bổ sung trong [RENDER_DEPLOY.md](../source/server/RENDER_DEPLOY.md); tài liệu đó ghi riêng kết quả build/test và blocker Docker engine, chưa khẳng định triển khai cloud thành công.

@@ -97,4 +97,4 @@ MVP dùng một server instance với state trong RAM; restart mất toàn bộ 
 
 Build và các test tự động đã chạy; xem số liệu trong TESTING.md. **Chưa xác minh camera/microphone/video/audio E2E trên hai browser/thiết bị**. Công cụ UI đã dừng vì không xác định được URL hiện tại của Chrome; không có screenshot hay kết quả media giả. STUN-only không đảm bảo qua mọi NAT. HTTPS/WSS và TURN cần cấu hình thực để thử hai mạng khác nhau.
 
-Đây là demo nội bộ dành cho người tham gia đồng ý. Trước khi mở công khai cần moderation, kiểm soát lạm dụng và giới hạn tài nguyên theo IP/toàn hệ thống. Docker và tính năng ngoài MVP chưa thêm.
+Đây là demo nội bộ dành cho người tham gia đồng ý. Trước khi mở công khai cần moderation, kiểm soát lạm dụng và giới hạn tài nguyên theo IP/toàn hệ thống. Đã thêm [cấu hình Docker và hướng dẫn Render cho backend](source/server/RENDER_DEPLOY.md); xem kết quả kiểm chứng và giới hạn trong tài liệu này. Các tính năng ngoài MVP chưa thêm.
