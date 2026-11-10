@@ -11,18 +11,19 @@
 7. Khi đang ghép ngẫu nhiên giữa hai tài khoản, có thêm nút **Kết bạn với người này**. Nút này không đóng phòng.
 8. Mở chat riêng và chọn **Gọi video**. Người nhận phải đang mở ứng dụng và đăng nhập; thông báo cuộc gọi đến xuất hiện trên mọi trang. Chọn **Chấp nhận** để mở camera/mic hoặc **Từ chối**.
 9. Trong cuộc gọi có nút bật/tắt mic, camera và kết thúc. Điều hướng giữa các trang không làm mất cuộc gọi riêng; reload/đóng tab/logout/mất kết nối sẽ kết thúc cuộc gọi.
+10. Dưới khung tin nhắn riêng có **Đính kèm** để chọn/gửi file và **Ghi tin nhắn thoại** để ghi, nghe lại, gửi hoặc hủy. Người nhận xem được khi mở lại hội thoại, kể cả lúc gửi họ chưa online.
 
 ## Chính sách
 
 - Guest không được tìm tài khoản, kết bạn hoặc dùng chat riêng.
-- Chat riêng hỗ trợ **tin nhắn chữ và gọi video/audio WebRTC**. Tin nhắn lưu DB, có thể gửi khi bên kia chưa mở trang. Khi đăng nhập lại, bên kia thấy thread trong danh sách cuộc trò chuyện riêng. Media cuộc gọi không được ghi/lưu vào lịch sử.
+- Chat riêng hỗ trợ **tin nhắn chữ, file, ghi âm và gọi video/audio WebRTC**. Tin nhắn và metadata attachment lưu DB; binary file/ghi âm lưu private storage (R2/S3). Có thể gửi khi bên kia chưa mở trang. Khi đăng nhập lại, bên kia thấy thread trong danh sách cuộc trò chuyện riêng. Media cuộc gọi không được ghi/lưu vào lịch sử.
 - Một cặp tài khoản dùng chung một hội thoại DIRECT; mở nhiều lần hoặc mở đồng thời từ hai phía không tạo phòng mới.
 - Kết bạn là quan hệ cần sự đồng ý của bên nhận. Hai lời mời ngược chiều không tự chấp nhận.
 - Hủy kết bạn không xóa lịch sử và không chặn nhắn tin. Chưa có tính năng chặn/báo cáo.
 - Chat riêng được lưu cho cả hai, kể cả trước khi kết bạn. Chính sách lưu chat ngẫu nhiên hiện tại giữ nguyên.
 - DIRECT luôn mở để nhắn tiếp, không bị startup recovery đóng như phòng RANDOM; chưa có thao tác ẩn/xóa DIRECT.
 - Chat riêng cập nhật bằng REST polling khoảng 2 giây; danh sách bạn/lời mời cập nhật khoảng 5 giây. Không có online presence, push notification hoặc delivered/read receipt cho chat riêng.
-- File và tin nhắn ghi âm tiếp tục nằm trong luồng ghép ngẫu nhiên, chưa tích hợp vào DIRECT. Gọi video trực tiếp dùng signaling CALL_* riêng trên WebSocket, không tạo/đóng conversation DIRECT.
+- File và tin nhắn ghi âm dùng cùng API upload/download của phòng ngẫu nhiên, kiểm tra quyền thành viên DIRECT thay cho room socket. Giới hạn 10 MiB/file, ghi âm 120 giây và 50 MiB/người/hội thoại; quota DIRECT là tổng tích lũy trong hội thoại đó. Backend cần cấu hình private storage và ffprobe để gửi ghi âm. Chi tiết: [File và ghi âm](FILE_AUDIO_SHARING.md). Gọi video trực tiếp dùng signaling CALL_* riêng trên WebSocket, không tạo/đóng conversation DIRECT.
 - Đi từ màn hình ghép ngẫu nhiên sang trang khác vẫn kết thúc phiên ghép theo hành vi hiện tại. Có thể gửi lời mời ngay trong phòng mà không điều hướng.
 
 ## API

@@ -1,6 +1,10 @@
 # File và tin nhắn thoại
 
-File được gửi bằng multipart REST, không đưa binary vào WebSocket. POST `/api/conversations/{id}/attachments` với `file`, `clientMessageId` UUID, `voice=false|true`; yêu cầu header auth và đang ở room đó. Response là message DTO; server phát CHAT_FILE/CHAT_AUDIO cho cả hai. Retry giữ clientMessageId trả lại message đã có. GET `/api/attachments/{id}/download-url` kiểm tra thành viên/quyền/TTL rồi trả `{url,expiresIn:60}`. URL là bearer capability: ai có URL có thể dùng trong 60 giây, kể cả sau khi người dùng ẩn lịch sử. UI có nút lấy lại URL nếu đã hết hạn.
+File được gửi bằng multipart REST, không đưa binary vào WebSocket. POST `/api/conversations/{id}/attachments` với `file`, `clientMessageId` UUID, `voice=false|true`; yêu cầu header auth. Với phòng RANDOM, người gửi phải đang ở phòng và server phát CHAT_FILE/CHAT_AUDIO cho hai bên. Với chat riêng DIRECT, người gửi phải là tài khoản thành viên; không cần socket/phòng ghép hoặc đối tác online. Response là message DTO, bên nhận lấy file/voice qua polling tin nhắn hiện có. Retry giữ clientMessageId trả lại message đã có. GET `/api/attachments/{id}/download-url` kiểm tra thành viên/quyền/TTL rồi trả `{url,expiresIn:60}`. URL là bearer capability: ai có URL có thể dùng trong 60 giây, kể cả sau khi người dùng ẩn lịch sử. UI có nút lấy lại URL nếu đã hết hạn.
+
+Trong **Bạn bè & chat riêng**, mở hội thoại để thấy **Ghi tin nhắn thoại** và **Đính kèm** ngay dưới khung tin nhắn. Chọn file rồi bấm Gửi file; với voice, ghi → dừng → nghe lại → gửi hoặc hủy. File/voice được lưu vào lịch sử DIRECT và vẫn tải được khi mở lại hội thoại. Chuyển hoặc đóng hội thoại hủy upload phía client, dọn preview và stream ghi âm riêng; một request đã commit ở server vẫn có thể xuất hiện trong lịch sử cũ. Không ảnh hưởng camera/mic của cuộc gọi video.
+
+Upload DIRECT khóa cùng cặp tài khoản với gửi text, kiểm tra lại membership, chống trùng và quota trong transaction READ_COMMITTED trước khi ghi metadata. PUT storage nằm ngoài transaction; nếu kiểm tra cuối/commit thất bại, object mới được xóa bù. Hai upload đồng thời không được vượt quota; retry trùng ID trả tin cũ trước khi kiểm tra quota cuối.
 
 PNG/JPEG/WEBP, PDF, UTF-8 TXT, DOCX; default 10 MiB/file, 50 MiB/người/cuộc hội thoại, 10 upload/phút/định danh; chỉ 2 upload xử lý đồng thời/instance. `UPLOAD_MAX_BYTES` cấu hình giới hạn validator + multipart; max-request-size mặc định 11MB, khi tăng file limit cần tăng `SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE` tương ứng. Frontend chủ động giới hạn 10 MiB mặc định, muốn thay đổi phải đồng bộ UI.
 
@@ -8,7 +12,7 @@ Tika đọc signature nội dung; kiểm tra extension/MIME khai báo khớp; ch
 
 ## Object Storage
 
-`StorageService` có implementation S3-compatible (AWS SDK). Mặc định STORAGE_PROVIDER=disabled; text/video vẫn chạy nhưng gửi/tải file trả 503. Cần tự tạo bucket private, chưa tích hợp bucket thật vì chưa có credential. Cấu hình Render:
+`StorageService` có implementation S3-compatible (AWS SDK), dùng được với Cloudflare R2. Mặc định STORAGE_PROVIDER=disabled; text/video vẫn chạy nhưng gửi/tải file trả 503. Cần cấu hình bucket private và credential backend; các kiểm thử tự động dùng storage giả, không xác minh R2 production. Cấu hình Render:
 
 ```dotenv
 STORAGE_PROVIDER=s3

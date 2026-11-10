@@ -1,3 +1,12 @@
+# Kiểm thử file/ghi âm trong chat riêng — 2026-11-10
+
+- Backend Maven verify: **71 tests, 0 failures, 0 errors, 0 skipped**, BUILD SUCCESS. Thêm 5 tests DirectUploadIntegrationTest: multipart HTTP không cần socket, partner/outsider/guest ACL, retry khi chạm quota, xóa object bù nếu hội thoại đóng sau PUT, quota với hai upload đồng thời, voice WAV qua ffprobe và download cho partner.
+- Frontend: **35 tests / 10 files passed**; Vite production build thành công. Thêm kiểm thử AttachmentComposer về endpoint DIRECT, retry ID/draft và abort/stale response khi đổi hội thoại; kiểm thử useDirectChat về upload xen kẽ polling không trùng/bỏ sót tin.
+- Storage test là in-memory, database là H2; chưa xác minh upload/download R2 thật hoặc thao tác mic/player trong trình duyệt ở lượt này. Không thêm migration hay sửa cấu hình secret.
+- Hướng dẫn: [File và ghi âm](FILE_AUDIO_SHARING.md), [Bạn bè và chat riêng](FRIENDS_AND_DIRECT_CHAT.md).
+
+---
+
 # Kiểm thử gọi video trực tiếp — 2026-11-09
 
 - Backend Maven verify: **66 tests, 0 failures, 0 errors, 0 skipped**, BUILD SUCCESS. Thêm 6 tests DirectCallsTest và 1 DirectCallSocketTest qua WebSocket TCP có ticket thật.

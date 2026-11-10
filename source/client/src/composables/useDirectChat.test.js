@@ -67,3 +67,16 @@ it('loads older messages using a stable cursor and deduplicates response items',
   expect(chat.messages.value.map(m => m.messageId)).toEqual(['1', '2', '3'])
   expect(chat.hasOlder.value).toBe(false)
 })
+
+it('merges a direct upload with polling once and keeps interleaved peer messages', async () => {
+  api.get.mockResolvedValueOnce({ data: { items: [message('1')], hasMore: false } })
+  await chat.open({ id: 'peer' })
+  const file = { ...message('3'), messageType: 'FILE', attachment: { id: 'file' } }
+  chat.receivedAttachment('room', file)
+  api.get.mockResolvedValueOnce({ data: { items: [message('2'), file], hasMore: false } })
+  await vi.advanceTimersByTimeAsync(2000)
+  expect(api.get.mock.calls.at(-1)[1].params).toEqual({ after: '1' })
+  expect(chat.messages.value.map(m => m.messageId)).toEqual(['1', '2', '3'])
+  chat.receivedAttachment('old-room', { ...message('4'), attachment: { id: 'old-file' } })
+  expect(chat.messages.value).toHaveLength(3)
+})

@@ -115,6 +115,11 @@ export function useDirectChat() {
     }
   }
 
+  function receivedAttachment(id, message) {
+    if (selected.value?.id === id) merge([message])
+    // Keep the GET cursor unchanged so an interleaved peer message is not skipped.
+  }
+
   onBeforeUnmount(close)
-  return { selected, messages, draft, error, opening, sending, loadingOlder, hasOlder, open, close, older, send }
+  return { selected, messages, draft, error, opening, sending, loadingOlder, hasOlder, open, close, older, send, receivedAttachment }
 }

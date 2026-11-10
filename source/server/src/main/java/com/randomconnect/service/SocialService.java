@@ -174,6 +174,14 @@ public class SocialService {
   return userView(peer, connection, actor.id());
  }
 
+ /** Serializes attachment metadata/quota with direct text sends; storage I/O runs outside this transaction. */
+ @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
+ public <T> T inDirect(Actor actor, String id, java.util.function.Supplier<T> action) {
+  var connection = direct(actor, id);
+  pair(actor, connection.peer(actor.id()), false);
+  return action.get();
+ }
+
  @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
  public Map<String, Object> send(Actor actor, String id, String text, String clientId) {
   requireUser(actor);

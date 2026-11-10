@@ -6,6 +6,8 @@ import { useDirectChat } from '../composables/useDirectChat.js'
 import { useCallStore } from '../stores/callStore.js'
 import { api, apiError } from '../services/api.js'
 import ChatBox from '../components/ChatBox.vue'
+import AttachmentComposer from '../components/AttachmentComposer.vue'
+import VoiceComposer from '../components/VoiceComposer.vue'
 
 const auth = useAuthStore(), route = useRoute(), chat = reactive(useDirectChat())
 const calls = useCallStore()
@@ -139,9 +141,13 @@ onBeforeUnmount(() => { disposed = true; searchGeneration++; overviewGeneration+
         <template v-if="chat.selected">
           <div class="direct-heading"><h2>{{ chat.selected.peer.displayName }} · @{{ chat.selected.peer.username }}</h2><div class="social-actions"><button class="primary" :disabled="!calls.ready || calls.active" @click="calls.dial(chat.selected)">Gọi video</button><button @click="chat.close">Đóng</button></div></div>
           <small v-if="!calls.ready">Đang kết nối dịch vụ gọi video…</small>
-          <p>Chat chữ riêng · tin nhắn được cập nhật tự động. Người nhận có thể mở cuộc trò chuyện khi đăng nhập lại.</p>
+          <p>Chat riêng · gửi chữ, file và tin nhắn thoại. Người nhận có thể mở cuộc trò chuyện khi đăng nhập lại.</p>
           <button v-if="chat.hasOlder" :disabled="chat.loadingOlder" @click="chat.older">{{ chat.loadingOlder ? 'Đang tải…' : 'Tải tin nhắn cũ hơn' }}</button>
           <ChatBox :messages="chat.messages" :guest-id="auth.user?.id" :peer-label="chat.selected.peer.displayName" title="Chat riêng đã lưu" read-only />
+          <div class="direct-attachments">
+            <VoiceComposer :key="`voice-${chat.selected.id}`" :room-id="chat.selected.id" @sent="chat.receivedAttachment(chat.selected.id, $event)" />
+            <AttachmentComposer :key="`file-${chat.selected.id}`" :room-id="chat.selected.id" @sent="chat.receivedAttachment(chat.selected.id, $event)" />
+          </div>
           <form class="direct-compose" @submit.prevent="chat.send">
             <label class="sr-only" for="direct-text">Tin nhắn riêng</label>
             <textarea id="direct-text" v-model="chat.draft" maxlength="2000" rows="3" placeholder="Nhập tin nhắn…" :disabled="chat.sending"></textarea>
