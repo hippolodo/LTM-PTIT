@@ -1,3 +1,5 @@
+> Tài liệu MVP trước nâng cấp. Với database/auth/history/file/voice, xem [Database](DATABASE_DESIGN.md), [Auth](AUTHENTICATION.md), [History và events hiện hành](CHAT_HISTORY.md), [Storage](FILE_AUDIO_SHARING.md), [Deployment](DEPLOYMENT_GUIDE.md). Các quy tắc matching/signaling giữ lại trừ phần được tài liệu mới cập nhật.
+
 # Protocol
 
 REST GET /api/health -> {"status":"UP","service":"randomconnect"}.

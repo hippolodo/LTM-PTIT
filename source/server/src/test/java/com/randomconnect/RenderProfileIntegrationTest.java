@@ -20,7 +20,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.test.context.ActiveProfiles;
 import static org.assertj.core.api.Assertions.*;
 
-@ActiveProfiles("render")
+@ActiveProfiles({"render","test"})
 @SpringBootTest(webEnvironment=SpringBootTest.WebEnvironment.RANDOM_PORT, properties={
  "ALLOWED_ORIGINS=https://randomconnect-test.vercel.app, https://randomconnect-preview.vercel.app",
  "logging.level.root=WARN", "debug=false"
@@ -42,7 +42,7 @@ class RenderProfileIntegrationTest {
 
  @Test void renderProfileBindsPubliclyAndKeepsHealthAndExactCors() throws Exception {
   assertThat(environment.getProperty("server.address")).isEqualTo("0.0.0.0");
-  assertThat(environment.getProperty("server.tomcat.threads.max",Integer.class)).isEqualTo(40);
+  assertThat(environment.getProperty("server.tomcat.threads.max",Integer.class)).isEqualTo(24);
   for(String origin:new String[]{TRUSTED,"https://randomconnect-preview.vercel.app"}) {
    var response=health(origin);
    assertThat(response.statusCode()).isEqualTo(200);

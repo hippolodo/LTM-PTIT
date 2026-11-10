@@ -10,3 +10,8 @@ __pycache__/
 *.key
 *.p12
 *.pfx
+
+# Backend runtime secrets
+secrets/
+*.jks
+*.p12.b64

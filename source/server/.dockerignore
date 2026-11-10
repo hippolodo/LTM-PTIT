@@ -1,5 +1,6 @@
 # This image needs only the Maven project, wrapper and sources.
 **
+!docker-entrypoint.sh
 !pom.xml
 !mvnw
 !.mvn/

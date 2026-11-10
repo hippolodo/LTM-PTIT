@@ -1,32 +1,21 @@
 # RandomConnect server
 
-JDK 21, Spring Boot 3.5.16, Maven Wrapper 3.3.4 / Maven 3.9.9. Không database. Một instance giữ sessions/queue/rooms trong RAM.
+Java21, Spring Boot3.5.16, Spring Security, JPA/MySQL, Flyway, native WebSocket, S3-compatible SDK và ffprobe. Cổng local8081. Queue/room RAM, một instance; user/history/attachment metadata trong DB.
+
+**Cần cấu hình DB TLS và JWT_SECRET trước khi chạy**. `.env.example` là tham khảo, Chép thành .env để backend tự nạp khi chạy từ root hoặc source/server. Xem [hướng dẫn Aiven/Render/local](../../docs/DEPLOYMENT_GUIDE.md).
 
 ```powershell
-$env:JAVA_HOME = 'C:\Program Files\Java\jdk-21'
+$env:JAVA_HOME='C:\Program Files\Java\jdk-21'
+# Đặt DB_*, JWT_SECRET và truststore theo Deployment Guide.
 .\mvnw.cmd spring-boot:run
 ```
 
+Build/test dùng profile test H2 và key chỉ cho test, không đụng production:
+
 ```powershell
-.\mvnw.cmd test
-.\mvnw.cmd package
-java -jar target/randomconnect-0.0.1-SNAPSHOT.jar
+.\mvnw.cmd verify
 ```
 
-macOS/Linux: `sh ./mvnw test`, `sh ./mvnw spring-boot:run`; hoặc cấp executable rồi chạy `./mvnw`.
+GET /api/health kiểm tra DB; /ws nhận ticket ngắn hạn từ POST /api/socket-ticket. [Auth](../../docs/AUTHENTICATION.md), [history/API/events](../../docs/CHAT_HISTORY.md), [upload/voice](../../docs/FILE_AUDIO_SHARING.md), [schema](../../docs/DATABASE_DESIGN.md).
 
-Health `GET http://localhost:8081/api/health` trả `{status:"UP",service:"randomconnect"}`. WebSocket `/ws`; [protocol](../../docs/PROTOCOL.md).
-
-Environment: PORT=8081; ALLOWED_ORIGINS là danh sách origin phân cách dấu phẩy; SESSION_TIMEOUT_MS=45000; STUN_URLS; TURN_URLS; TURN_SHARED_SECRET. `.env.example` chỉ là mẫu; đặt biến trong shell trước khi chạy. Chỉ giữ TURN secret ở server/Coturn. Có TURN_URLS mà thiếu secret thì server từ chối khởi động. Credential ngắn hạn 600 giây được ký HMAC-SHA1, cấp mới mỗi MATCH_FOUND.
-
-MatchmakingService giữ state lock chung cho queue/room, outbox có thứ tự. Dispatcher gửi ngoài state lock; mỗi socket được ConcurrentWebSocketSessionDecorator giới hạn 2 giây/256 KiB buffer. RoomService kiểm tra membership; SignalingService kiểm tra schema SDP/ICE và role offer/answer. Guest identity lấy từ socket, không tin senderId. Không log nội dung chat/SDP/ICE.
-
-App envelope tối đa 64 KiB ký tự; container nhận đến 128 KiB để trả ERROR cho input quá cỡ vừa phải, input lớn hơn giới hạn container bị đóng socket. Heartbeat client gửi PING mỗi 15 giây; server hết hạn sau 45 giây im lặng, scan mỗi 5 giây. Các giới hạn rate ghi trong protocol. Origin allowlist không thay thế chống abuse cho public server.
-
-Tests: matching/concurrency/lifecycle, relay/membership, stale room, rate/timeout, TURN HMAC, REST health, TCP WebSocket integration. Xem [kết quả](../../docs/TESTING.md).
-
-Cổng mặc định là **8081**; không cần đặt biến PORT. Nếu đổi cổng, cập nhật VITE_API_BASE_URL/VITE_WS_URL tương ứng.
-
-## Docker / Render
-
-Xem [RENDER_DEPLOY.md](RENDER_DEPLOY.md) để sửa lỗi không tìm thấy Dockerfile, cấu hình build context, biến môi trường và tích hợp Vercel HTTPS/WSS. Dockerfile multi-stage nằm ngay trong `source/server`; chỉ dùng file trong module này, không phụ thuộc frontend hoặc thư mục cha. Image tự kích hoạt profile `render`, yêu cầu `ALLOWED_ORIGINS` và bind `0.0.0.0:${PORT:10000}`. Chạy Maven thông thường vẫn dùng cổng local 8081.
+Docker context source/server, Dockerfile ở module. Image kích hoạt render, ALLOWED_ORIGINS bắt buộc, Secure/None cookies, bind PORT mặc định10000, non-root và runtime ffprobe. Docker entrypoint hỗ trợ DB_TRUSTSTORE_BASE64_PATH cho Render text secret file. STORAGE_PROVIDER=disabled nếu chưa có bucket: text/video vẫn hoạt động; file/voice503. Không lưu file lâu dài trên disk Render.

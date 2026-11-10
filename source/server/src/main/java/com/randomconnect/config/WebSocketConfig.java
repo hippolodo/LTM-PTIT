@@ -8,6 +8,7 @@ import org.springframework.web.socket.config.annotation.*;
 import org.springframework.web.servlet.config.annotation.*;
 @Configuration @EnableWebSocket
 public class WebSocketConfig implements WebSocketConfigurer,WebMvcConfigurer {
+ @org.springframework.beans.factory.annotation.Autowired private com.randomconnect.websocket.IdentityHandshake identityHandshake;
  private final ChatWebSocketHandler handler; private final String[] origins;
  public WebSocketConfig(ChatWebSocketHandler handler,@Value("${randomconnect.allowed-origins}") String origins) {
   this.handler=handler;
@@ -22,6 +23,6 @@ public class WebSocketConfig implements WebSocketConfigurer,WebMvcConfigurer {
  @Bean public org.springframework.web.socket.server.standard.ServletServerContainerFactoryBean socketContainer() {
   var bean=new org.springframework.web.socket.server.standard.ServletServerContainerFactoryBean();bean.setMaxTextMessageBufferSize(131072);return bean;
  }
- @Override public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {registry.addHandler(handler,"/ws").setAllowedOrigins(origins);}
- @Override public void addCorsMappings(CorsRegistry registry) {registry.addMapping("/api/**").allowedOrigins(origins).allowedMethods("GET");}
+ @Override public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {registry.addHandler(handler,"/ws").addInterceptors(identityHandshake).setAllowedOrigins(origins);}
+ @Override public void addCorsMappings(CorsRegistry registry) {registry.addMapping("/api/**").allowedOrigins(origins).allowedMethods("GET","POST","PATCH","DELETE","OPTIONS").allowedHeaders("Authorization","Content-Type","X-XSRF-TOKEN","X-CSRF-TOKEN").allowCredentials(true);}
 }

@@ -1,3 +1,27 @@
+# Báo cáo nâng cấp RandomConnect — 2026-11-07
+
+## Backend
+
+Đã thêm JPA/MySQL/Flyway và migration 7 bảng; pool3, UTC, TLS xác minh hostname, validate schema và health DB. Auth BCrypt + JWT + hashed rotating refresh session; CSRF cookie, CORS exact origins, guest TTL, WS ticket một lần và thu hồi socket khi logout. ConversationService persist text/attachment, dedupe clientMessageId, participant ACL, receipt, history phân trang và hide riêng. Matching/outbox/signaling hiện tại giữ lại; tích hợp transaction trước khi phát event.
+
+StorageService S3-compatible có signed GET60 giây, bucket private; upload kiểm tra MIME/signature/name/size/quota, giới hạn song song, revalidate room sau PUT và xóa object bù khi Next. Voice xác minh audio-only và duration bằng ffprobe. Retention dọn expired data/files; startup recovery đóng room cũ sau restart. Docker runtime non-root có ffprobe và entrypoint giải mã truststore từ Render secret file base64.
+
+## Frontend
+
+Thêm AuthPanel, auth store/credentials memory-only và refresh interceptor; router guard, ProfileView, HistoryView. Màn chat có thông báo retention, trạng thái tin nhắn, AttachmentComposer/View và VoiceComposer. useVoiceRecorder chọn codec hỗ trợ, xin mic chủ động, tạo preview và dọn stream riêng khi hủy/Next. Giao diện giữ phong cách/responsive hiện tại, không thêm UI framework lớn. Stream cuộc gọi không dùng để ghi âm.
+
+## Phụ thuộc triển khai
+
+Aiven đã kiểm tra kết nối TLS thành công với CA được cung cấp; log người dùng xác nhận V1 tạo schema thành công trên MySQL8.4. Chưa có Object Storage credential nên chưa test file production. Không có Docker Engine đang chạy để build/run image. Chưa xác minh hai thiết bị thật, cookie cross-site, codec audio và video call đang gửi attachment. Agent chưa commit/push/deploy; V1 trên Aiven được chạy bởi backend local của người dùng theo log cung cấp. H2 MySQL mode không thay thế kiểm thử MySQL staging; URL signed vẫn dùng được đến khi hết60 giây. Reconnect tạo phiên ghép mới, không resume media cũ. Chỉ hỗ trợ một backend instance.
+
+Sơ đồ và bảng: [Database](DATABASE_DESIGN.md). API và phiên: [Auth](AUTHENTICATION.md). History/events: [Chat History](CHAT_HISTORY.md). File/voice/storage: [File Audio](FILE_AUDIO_SHARING.md). Toàn bộ environment/lệnh chạy/TLS/Render/Vercel: [Deployment Guide](DEPLOYMENT_GUIDE.md). Kết quả thực tế: [Testing](TESTING.md).
+
+---
+
+## Phụ lục lịch sử MVP trước nâng cấp
+
+> Tài liệu MVP trước nâng cấp. Với database/auth/history/file/voice, xem [Database](DATABASE_DESIGN.md), [Auth](AUTHENTICATION.md), [History và events hiện hành](CHAT_HISTORY.md), [Storage](FILE_AUDIO_SHARING.md), [Deployment](DEPLOYMENT_GUIDE.md). Các quy tắc matching/signaling giữ lại trừ phần được tài liệu mới cập nhật.
+
 # Báo cáo triển khai theo phase
 
 Tất cả file là file mới vì workspace ban đầu trống; chưa có Git repository nên không có commit/push hay thay đổi cũ cần ghi đè. Không có INSTRUCTION.md để sửa; không tạo file giả thay mẫu giảng viên. Không bịa thông tin thành viên.

@@ -1,6 +1,6 @@
 # RandomConnect — Lập trình mạng
 
-Ứng dụng ghép cặp guest ngẫu nhiên, chat chữ thời gian thực và video/audio WebRTC 1–1. Vue 3 + Vite + Pinia + Vue Router; Java 21 + Spring Boot 3.5.16 + native WebSocket. Không dùng database, tài khoản hoặc lưu lịch sử.
+Ứng dụng chat ngẫu nhiên 1–1: guest hoặc tài khoản, text realtime, WebRTC video/audio, lịch sử cho hai tài khoản, gửi file và tin nhắn thoại. Vue 3/Vite/Pinia + Java 21/Spring Boot 3.5.16 + MySQL/Flyway + private S3-compatible storage.
 
 ## Thông tin nhóm (03 thành viên)
 
@@ -12,89 +12,52 @@
 
 **Ghi chú mẫu giảng viên:** thư mục ban đầu trống, chưa có Git repository, `INSTRUCTION.md` hay README mẫu. Các thư mục được tạo theo đặc tả; chưa thể xác nhận bố cục khớp mẫu giảng viên. Không tạo hoặc sửa `INSTRUCTION.md`. Nhóm cần bổ sung thông tin thật và lịch sử đóng góp thật.
 
-## Kiến trúc và chức năng
+## Chức năng và chính sách
 
-![Kiến trúc](statics/diagram.png)
+- Giữ matching/Next/Stop/reconnect, preview camera/mic, text-only, WebRTC signaling và TURN ngắn hạn.
+- Đăng ký/đăng nhập, BCrypt, access JWT trong RAM, refresh cookie HttpOnly có rotation/revocation; profile display name.
+- User ↔ User lưu history có phân trang; mỗi người ẩn riêng sau khi kết thúc. Hội thoại có guest hết hạn mặc định 24 giờ và không xuất hiện trong history tài khoản.
+- File PNG/JPEG/WEBP/PDF/TXT/DOCX tối đa 10 MiB; metadata trong DB, binary trong bucket private, URL tải có hạn và kiểm tra thành viên.
+- Voice chủ động ghi âm bằng stream riêng, nghe lại/gửi/hủy, tối đa120 giây; backend ffprobe xác minh. Không ghi lại cuộc gọi.
 
-- Server cấp guest ID cho từng WebSocket. Ghép hai người đang chờ; một guest chỉ thuộc một queue hoặc một room.
-- Chat chữ có kiểm tra room, trim, tối đa 2000 ký tự; server gán senderId, messageId và timestamp, echo đúng một lần tới mỗi thành viên.
-- Video/audio qua RTCPeerConnection; offer/answer và ICE đi qua WebSocket, media đi P2P hoặc TURN.
-- Preview chỉ sau thao tác cho phép, mute/camera bằng `track.enabled`. Next giữ local preview, đóng peer cũ. Stop/ngắt kết nối/rời trang giải phóng media.
-- Next chỉ đưa người yêu cầu vào queue; đối tác về Idle. Stop không ghép lại. Có heartbeat và origin allowlist.
-- Có lựa chọn chủ động chỉ chat chữ; lựa chọn này không gửi camera/mic của bạn. Bạn vẫn có thể nhận media nếu đối tác đã chọn video.
+## Chạy code
 
-## Yêu cầu môi trường
+Cần JDK21, Node22.12+, Aiven credential; CA ri?ng ch? c?n n?u Java ch?a tin ch?ng ch? server; ffprobe và bucket private nếu dùng file/voice. **Backend mới bắt buộc DB và JWT_SECRET**; không còn chạy chỉ bằng Maven với cấu hình trống. Backend tự đọc file .env tại root hoặc source/server; biến môi trường có độ ưu tiên cao hơn. Xem các lệnh PowerShell đầy đủ ở [hướng dẫn triển khai](docs/DEPLOYMENT_GUIDE.md), cấu hình mẫu [server/.env.example](source/server/.env.example).
 
-JDK **21**, Node.js **22.12+**, npm. Lần đầu cần Internet để Maven Wrapper và npm tải dependency. Cài JDK 21 và đặt `JAVA_HOME` tới JDK này; máy hiện tại đã có cả JDK 21 và 24 nên cần chọn đúng.
-
-## Chạy trên Windows (hai terminal)
-
-Terminal 1, từ thư mục dự án:
+Sau khi đặt các biến backend:
 
 ```powershell
-$env:JAVA_HOME = 'C:\Program Files\Java\jdk-21'
 cd source/server
 .\mvnw.cmd spring-boot:run
 ```
 
-Terminal 2:
+Terminal khác từ root:
 
 ```powershell
 cd source/client
+$env:VITE_API_BASE_URL='http://localhost:8081'
+$env:VITE_WS_URL='ws://localhost:8081/ws'
 npm ci
 npm run dev
 ```
 
-Mở **http://localhost:5173**, backend mặc định **http://localhost:8081**.
+Mở http://localhost:5173. Backend local8081; image Render dùng PORT do nền tảng cấp. Environment ở terminal ghi đè .env.local đang trỏ Render. Frontend mới cần backend mới có API auth; không deploy riêng frontend trước.
 
-Backend mặc định dùng **8081**; frontend REST và WebSocket cũng trỏ tới 8081. Không cần đặt biến `PORT`. Có thể ghi đè cổng bằng biến này khi cần.
+## Tài liệu bàn giao
 
-```powershell
-Invoke-RestMethod http://localhost:8081/api/health
-```
+- [Bạn bè, tìm tài khoản và chat riêng](docs/FRIENDS_AND_DIRECT_CHAT.md)
+- [Thiết kế Database và sơ đồ quan hệ](docs/DATABASE_DESIGN.md)
+- [Authentication, API auth, cookie/CSRF](docs/AUTHENTICATION.md)
+- [Chat history, privacy, REST/WS events](docs/CHAT_HISTORY.md)
+- [File/audio, storage, quota, giới hạn](docs/FILE_AUDIO_SHARING.md)
+- [Aiven TLS, Render/Vercel, environment và lệnh chạy](docs/DEPLOYMENT_GUIDE.md)
+- [Kết quả kiểm thử và checklist E2E](docs/TESTING.md)
+- [WebRTC/NAT/TURN](docs/DEPLOYMENT.md)
 
-macOS/Linux: đặt `JAVA_HOME` tới JDK 21; trong `source/server` chạy `sh ./mvnw spring-boot:run` (hoặc cấp quyền executable rồi `./mvnw`). Frontend dùng cùng lệnh npm.
+## Kiểm thử và giới hạn
 
-## Cấu hình
+Backend: `source/server/mvnw.cmd -f source/server/pom.xml verify`. Frontend trong source/client: `npm test`, `npm run build`, `npm audit`. Tests dùng H2 MySQL mode và storage giả lập, không cần secret production. Xem TESTING.md để biết số lượng và những phần chưa xác minh.
 
-Frontend mặc định kết nối localhost. Muốn thay đổi, chép `source/client/.env.example` thành `.env.local` và khởi động lại Vite. Các biến `VITE_` là cấu hình công khai trong bundle, tuyệt đối không chứa shared secret.
+Matching/room vẫn ở RAM và chỉ hỗ trợ một backend instance; restart đóng room, tài khoản còn history trong DB. STUN-only không qua mọi NAT, cần TURN cho mạng hạn chế. Aiven đã kết nối TLS và log người dùng xác nhận migration V1 thành công. Chưa kiểm chứng bucket thật, Docker runtime hoặc video/voice trên hai thiết bị thật. Render/Vercel khác site có thể bị trình duyệt chặn cookie; ưu tiên custom domain cùng site. Quota/rate limit là mức demo, chưa thay thế moderation, antivirus, abuse protection hoặc load test production.
 
-Backend đọc biến môi trường của tiến trình; **không tự đọc `.env`**. Xem `source/server/.env.example`. Mặc định origin cho phép `http://localhost:5173` và `http://127.0.0.1:5173`. Thay đổi `ALLOWED_ORIGINS` khi đổi URL.
-
-TURN tùy chọn: đặt `TURN_URLS` và `TURN_SHARED_SECRET` ở backend, dùng cùng secret với Coturn. Backend cấp username/password HMAC có hạn 10 phút qua WebSocket và cấp lại khi ghép room; shared secret không ra client. Xem [triển khai HTTPS/TURN](docs/DEPLOYMENT.md).
-
-## Kiểm thử và demo
-
-```powershell
-cd source/server
-.\mvnw.cmd test
-.\mvnw.cmd package
-```
-
-```powershell
-cd source/client
-npm test
-npm run build
-npm audit
-```
-
-Mở A/B ở hai tab hoặc profile độc lập. Cấp quyền media bằng nút rõ ràng, Start A → Waiting, Start B → cùng room. Gửi tin hai chiều, kiểm tra âm thanh/video và nút Mic/Camera. A Next → B Partner left; mở C và Start → A/C ghép, B ở Idle. Stop, refresh hoặc đóng C và kiểm tra cleanup. Hướng dẫn đầy đủ và kết quả thực tế: [TESTING.md](docs/TESTING.md).
-
-## Giao thức và tài liệu
-
-REST `GET /api/health`; native WebSocket `/ws` với envelope `{type, requestId?, roomId?, payload?}`. Các event chính: SESSION_READY, FIND_PARTNER, WAITING, MATCH_FOUND, CHAT_MESSAGE, WEBRTC_OFFER, WEBRTC_ANSWER, ICE_CANDIDATE, NEXT_PARTNER, LEAVE_ROOM, PARTNER_LEFT, ROOM_CLOSED, ERROR, PING/PONG.
-
-- [Kiến trúc và đồng bộ](docs/ARCHITECTURE.md)
-- [Protocol và giới hạn](docs/PROTOCOL.md)
-- [Kết quả test / checklist manual E2E](docs/TESTING.md)
-- [HTTPS / NAT / TURN](docs/DEPLOYMENT.md)
-- [Báo cáo các phase và file](docs/IMPLEMENTATION_REPORT.md)
-- [Client README](source/client/README.md), [Server README](source/server/README.md)
-
-## Giới hạn và kết quả
-
-MVP dùng một server instance với state trong RAM; restart mất toàn bộ phiên, chưa hỗ trợ scale ngang. Chat chỉ nằm trong bộ nhớ phiên trên client và bị xóa khi đổi room. Không ghi âm/ghi hình.
-
-Build và các test tự động đã chạy; xem số liệu trong TESTING.md. **Chưa xác minh camera/microphone/video/audio E2E trên hai browser/thiết bị**. Công cụ UI đã dừng vì không xác định được URL hiện tại của Chrome; không có screenshot hay kết quả media giả. STUN-only không đảm bảo qua mọi NAT. HTTPS/WSS và TURN cần cấu hình thực để thử hai mạng khác nhau.
-
-Đây là demo nội bộ dành cho người tham gia đồng ý. Trước khi mở công khai cần moderation, kiểm soát lạm dụng và giới hạn tài nguyên theo IP/toàn hệ thống. Đã thêm [cấu hình Docker và hướng dẫn Render cho backend](source/server/RENDER_DEPLOY.md); xem kết quả kiểm chứng và giới hạn trong tài liệu này. Các tính năng ngoài MVP chưa thêm.
+Agent chưa commit/push/deploy. Người dùng đã chạy backend local và log xác nhận Flyway áp dụng V1 trên Aiven. Trước khi push vào repo bật Auto Deploy, cấu hình secret và truststore trên Render theo Deployment Guide. Không gửi password/key qua chat hoặc đưa chúng vào VITE_.

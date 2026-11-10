@@ -1,3 +1,9 @@
+# Cập nhật bản nâng cấp 2026-11-07
+
+Bản backend mới cần **DB TLS + JWT_SECRET**, và bucket private để dùng file/voice. Dùng [DEPLOYMENT_GUIDE](../../docs/DEPLOYMENT_GUIDE.md) làm hướng dẫn hiện hành. Các lệnh Docker bên dưới của bản MVP chỉ minh họa context/PORT, sẽ không khởi động bản mới nếu thiếu DB/JWT. Docker runtime chưa xác minh vì máy hiện không có Docker Engine chạy.
+
+---
+
 # Triển khai RandomConnect Backend lên Render
 
 ## 1. Backend thực tế và phạm vi thay đổi

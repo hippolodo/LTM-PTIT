@@ -4,9 +4,14 @@ server:
   port: ${PORT:10000}
   tomcat:
     threads:
-      max: 40
+      max: 24
       min-spare: 4
 
 randomconnect:
   # Required for deployment: no localhost or wildcard fallback in this profile.
   allowed-origins: ${ALLOWED_ORIGINS}
+
+app:
+  auth:
+    cookie-secure: true
+    cookie-same-site: None

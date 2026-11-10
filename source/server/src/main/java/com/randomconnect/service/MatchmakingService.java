@@ -13,10 +13,14 @@ import org.springframework.web.socket.*;
 import org.springframework.web.socket.handler.ConcurrentWebSocketSessionDecorator;
 @Service
 public class MatchmakingService {
+ @org.springframework.beans.factory.annotation.Autowired private ConversationService conversations;
+ @org.springframework.beans.factory.annotation.Autowired private com.randomconnect.auth.IdentityService identities;
+ @org.springframework.beans.factory.annotation.Autowired private DirectCalls directCalls;
  private final Object lock=new Object();
  private final Map<String,GuestSession> sessions=new ConcurrentHashMap<>();
  private final LinkedHashSet<String> waiting=new LinkedHashSet<>();
  private final ArrayDeque<Delivery> outbox=new ArrayDeque<>();
+ private final Set<String> pendingClose=java.util.concurrent.ConcurrentHashMap.newKeySet();
  private final RoomService rooms;
  private final MessageSender sender;
  private final SignalingService signaling=new SignalingService();
@@ -43,8 +47,10 @@ public class MatchmakingService {
  public void accept(String id,SocketMessage m) {
   synchronized(lock) {
    var g=sessions.get(id); if(g==null) return;
+   if(identities!=null)try{identities.validate(g.actor);}catch(Exception e){disconnect(id);try{g.socket.close(CloseStatus.POLICY_VIOLATION);}catch(Exception ignored){}return;}
    g.lastSeen=System.currentTimeMillis();
    if(!g.allow(m.type(),g.lastSeen)) {error(id,m.requestId(),"RATE_LIMITED");return;}
+   if(m.type().startsWith("CALL_")) {if(directCalls!=null)directCalls.accept(g,m,sessions,waiting,this::emit);return;}
    try {
     switch(m.type()) {
      case "FIND_PARTNER" -> find(g,m.requestId());
@@ -60,8 +66,9 @@ public class MatchmakingService {
       String peer=rooms.peer(g,m.roomId());
       var text=m.payload()==null?null:m.payload().get("text");
       if(text==null || !text.isTextual() || text.asText().trim().isEmpty() || text.asText().length()>2000)throw new IllegalArgumentException("INVALID_MESSAGE");
-      var body=Map.of("text",text.asText().trim(),"messageId",UUID.randomUUID().toString(),"senderId",g.guestId,"sentAt",java.time.Instant.now().toString());
-      relay(g,m.type(),m.roomId(),body);relay(sessions.get(peer),m.type(),m.roomId(),body);
+      String clientId=m.payload().path("clientMessageId").asText(UUID.randomUUID().toString());
+      if(conversations!=null){var saved=conversations.text(g.actor,m.roomId(),text.asText().trim(),clientId);relay(g,m.type(),m.roomId(),saved.payload());if(saved.created())relay(sessions.get(peer),m.type(),m.roomId(),saved.payload());}
+      else {var body=Map.of("text",text.asText().trim(),"messageId",UUID.randomUUID().toString(),"senderId",g.guestId,"sentAt",java.time.Instant.now().toString());relay(g,m.type(),m.roomId(),body);relay(sessions.get(peer),m.type(),m.roomId(),body);}
      }
      case "WEBRTC_OFFER", "WEBRTC_ANSWER", "ICE_CANDIDATE" -> {
       String peer=rooms.peer(g,m.roomId());
@@ -70,6 +77,10 @@ public class MatchmakingService {
       if(m.type().equals("WEBRTC_OFFER") && !r.first().equals(g.id))throw new IllegalArgumentException("INVALID_MESSAGE");
       if(m.type().equals("WEBRTC_ANSWER") && !r.second().equals(g.id))throw new IllegalArgumentException("INVALID_MESSAGE");
       relay(sessions.get(peer),m.type(),m.roomId(),m.payload());
+     }
+     case "MESSAGE_DELIVERED", "MESSAGE_READ" -> {
+      String peer=rooms.peer(g,m.roomId());if(conversations==null)break;
+      var body=conversations.receipt(g.actor,m.roomId(),m.payload().path("messageId").asText(),m.type().equals("MESSAGE_READ")?"READ":"DELIVERED");relay(g,"MESSAGE_STATUS",m.roomId(),body);relay(sessions.get(peer),"MESSAGE_STATUS",m.roomId(),body);
      }
      case "PING" -> emit(g,"PONG",m.requestId(),null,Map.of());
      case "PONG" -> {}
@@ -84,24 +95,30 @@ public class MatchmakingService {
   outbox.add(new Delivery(g,event,room));
  }
  private void find(GuestSession g,String request) {
-  if(g.roomId!=null) {error(g.id,request,"ALREADY_MATCHED");return;}
+  if(directCalls!=null && directCalls.busy(g.actor)){error(g.id,request,"ALREADY_MATCHED");return;}
+  if(g.roomId!=null || sessions.values().stream().anyMatch(p->!p.id.equals(g.id)&&p.actor.sameIdentity(g.actor)&&(p.roomId!=null||waiting.contains(p.id)))) {error(g.id,request,"ALREADY_MATCHED");return;}
   if(waiting.contains(g.id)) {emit(g,"WAITING",request,null,Map.of("status","WAITING"));return;}
   waiting.removeIf(id -> {var p=sessions.get(id); return p==null || !p.socket.isOpen() || p.roomId!=null;});
   var candidates=waiting.stream().filter(id->!id.equals(g.id)).toList();
   if(candidates.isEmpty()) {waiting.add(g.id);emit(g,"WAITING",request,null,Map.of("status","WAITING"));return;}
   var p=sessions.get(candidates.get(ThreadLocalRandom.current().nextInt(candidates.size()))); waiting.remove(p.id);
   var room=rooms.create(p,g);
-  emit(p,"MATCH_FOUND",null,room.id(),Map.of("partnerId",g.guestId,"initiator",true,"iceServers",ice.forGuest(p.guestId)));
-  emit(g,"MATCH_FOUND",request,room.id(),Map.of("partnerId",p.guestId,"initiator",false,"iceServers",ice.forGuest(g.guestId)));
+  Map<String,Object> policy=Map.of();
+  if(conversations!=null)try{policy=conversations.create(room.id(),p.actor,g.actor);}catch(Exception e){rooms.remove(room.id());p.roomId=g.roomId=null;waiting.add(p.id);error(g.id,request,"INTERNAL_ERROR");return;}
+  var first=new LinkedHashMap<String,Object>(policy);first.put("partnerId",g.guestId);first.put("initiator",true);first.put("iceServers",ice.forGuest(p.guestId));
+  var second=new LinkedHashMap<String,Object>(policy);second.put("partnerId",p.guestId);second.put("initiator",false);second.put("iceServers",ice.forGuest(g.guestId));
+  emit(p,"MATCH_FOUND",null,room.id(),first);
+  emit(g,"MATCH_FOUND",request,room.id(),second);
  }
  private void closeRoom(GuestSession g,String reason) {
   var r=rooms.remove(g.roomId); g.roomId=null;
   if(r==null) return;
+  if(conversations!=null)try{conversations.close(r.id());}catch(Exception e){pendingClose.add(r.id());}
   var peer=sessions.get(r.peer(g.id));
   if(peer!=null) {peer.roomId=null;emit(peer,"PARTNER_LEFT",null,r.id(),Map.of("reason",reason));}
  }
  public void disconnect(String id) {
-  synchronized(lock) {var g=sessions.remove(id); if(g==null)return;waiting.remove(id);closeRoom(g,"DISCONNECTED");}
+  synchronized(lock) {var g=sessions.remove(id); if(g==null)return;if(directCalls!=null)directCalls.disconnect(id,this::emit);waiting.remove(id);closeRoom(g,"DISCONNECTED");}
  }
  // One dispatcher preserves the total order in which state transitions append notifications.
  @Scheduled(fixedDelay=10)
@@ -114,10 +131,14 @@ public class MatchmakingService {
  }
  @Scheduled(fixedDelay=5000)
  public void expire() {
+  for(String room:pendingClose)try{conversations.close(room);pendingClose.remove(room);}catch(Exception ignored){}
   List<GuestSession> stale;
-  synchronized(lock) {long now=System.currentTimeMillis();stale=sessions.values().stream().filter(g->now-g.lastSeen>timeout).toList(); for(var g:stale)disconnect(g.id);}
+  synchronized(lock) {long now=System.currentTimeMillis();if(directCalls!=null)directCalls.expire(now,this::emit);stale=sessions.values().stream().filter(g->now-g.lastSeen>timeout).toList(); for(var g:stale)disconnect(g.id);}
   for(var g:stale)try {g.socket.close(CloseStatus.SESSION_NOT_RELIABLE);}catch(Exception ignored){}
  }
+ public <T> T inRoom(com.randomconnect.auth.Actor actor,String room,java.util.function.Supplier<T> action){synchronized(lock){var g=sessions.values().stream().filter(x->x.actor.sameIdentity(actor)&&room.equals(x.roomId)).findFirst().orElseThrow(ConversationService::notFound);rooms.peer(g,room);return action.get();}}
+ public ConversationService.Saved publishAttachment(com.randomconnect.auth.Actor actor,String room,java.util.function.Supplier<ConversationService.Saved> action){synchronized(lock){var g=sessions.values().stream().filter(x->x.actor.sameIdentity(actor)&&room.equals(x.roomId)).findFirst().orElseThrow(ConversationService::notFound);String peer=rooms.peer(g,room);var saved=action.get();String type="AUDIO".equals(saved.payload().get("messageType"))?"CHAT_AUDIO":"CHAT_FILE";relay(g,type,room,saved.payload());if(saved.created())relay(sessions.get(peer),type,room,saved.payload());return saved;}}
+ @org.springframework.context.event.EventListener public void revoked(com.randomconnect.auth.SessionRevoked event){List<GuestSession> revoked;synchronized(lock){revoked=sessions.values().stream().filter(g->event.sessionId().equals(g.actor.sessionId())).toList();for(var g:revoked)disconnect(g.id);}for(var g:revoked)try{g.socket.close(CloseStatus.POLICY_VIOLATION);}catch(Exception ignored){}}
  @PreDestroy public void shutdown() {for(var g:sessions.values())try{g.socket.close(CloseStatus.GOING_AWAY);}catch(Exception ignored){} sessions.clear();}
  public Map<String,Integer> snapshot() {synchronized(lock) {return Map.of("sessions",sessions.size(),"waiting",waiting.size(),"rooms",rooms.size());}}
 }
