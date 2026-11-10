@@ -9,7 +9,8 @@ import { useMedia } from '../composables/useMedia.js'
 
 export const useSessionStore = defineStore('session', () => {
   const guestId = ref(null), socketStatus = ref('CLOSED'), matchStatus = ref('IDLE'), roomId = ref(null)
-  const partnerId = ref(null), error = ref(''), messages = ref([]), busy = ref(false)
+  const partnerId = ref(null), partnerName = ref(''), partnerFriendship = ref('NONE'), incomingFriendRequest = ref(null)
+  const error = ref(''), messages = ref([]), busy = ref(false)
   const remoteStream = shallowRef(null), retentionNotice = ref(''), persistentHistory = ref(false), expiresAt = ref(null)
   const partnerCameraEnabled = ref(false)
 
@@ -38,6 +39,9 @@ export const useSessionStore = defineStore('session', () => {
     rtc.close()
     roomId.value = null
     partnerId.value = null
+    partnerName.value = ''
+    partnerFriendship.value = 'NONE'
+    incomingFriendRequest.value = null
     partnerCameraEnabled.value = false
     messages.value = []
   }
@@ -60,6 +64,14 @@ export const useSessionStore = defineStore('session', () => {
       expiresAt.value = m.payload.expiresAt || null
       roomId.value = m.roomId
       partnerId.value = m.payload.partnerId
+      partnerName.value = m.payload.partnerName || ''
+      partnerFriendship.value = m.payload.partnerFriendship || 'NONE'
+      if (m.payload.partnerFriendship === 'INCOMING') {
+        incomingFriendRequest.value = {
+          fromUserId: m.payload.partnerId,
+          fromUserName: m.payload.partnerName || 'Đối tác'
+        }
+      }
       partnerCameraEnabled.value = false
       busy.value = false
 
@@ -92,6 +104,21 @@ export const useSessionStore = defineStore('session', () => {
     }
     if (['WEBRTC_OFFER', 'WEBRTC_ANSWER', 'ICE_CANDIDATE'].includes(m.type) && m.roomId === roomId.value) {
       rtc.signal(m)
+    }
+    if (m.type === 'FRIEND_REQUEST' && m.roomId === roomId.value) {
+      partnerFriendship.value = 'INCOMING'
+      incomingFriendRequest.value = {
+        fromUserId: m.payload.fromUserId || partnerId.value,
+        fromUserName: m.payload.fromUserName || partnerName.value || 'Đối tác'
+      }
+    }
+    if (m.type === 'FRIEND_ACCEPT' && m.roomId === roomId.value) {
+      partnerFriendship.value = 'ACCEPTED'
+      incomingFriendRequest.value = null
+    }
+    if (m.type === 'FRIEND_DECLINE' && m.roomId === roomId.value) {
+      if (partnerFriendship.value === 'OUTGOING') partnerFriendship.value = 'NONE'
+      incomingFriendRequest.value = null
     }
     if (m.type === 'PARTNER_LEFT' && m.roomId === roomId.value) {
       resetRoom()
@@ -210,6 +237,32 @@ export const useSessionStore = defineStore('session', () => {
     error.value = ''
   }
 
+  async function sendFriendRequest(fromUserName = '') {
+    if (!roomId.value || !partnerId.value) return
+    await api.post(`/api/social/friends/${partnerId.value}`)
+    partnerFriendship.value = 'OUTGOING'
+    socket?.send('FRIEND_REQUEST', roomId.value, {
+      fromUserId: guestId.value,
+      fromUserName
+    })
+  }
+
+  async function acceptFriendRequest() {
+    if (!partnerId.value) return
+    await api.patch(`/api/social/friends/${partnerId.value}`, { accept: true })
+    partnerFriendship.value = 'ACCEPTED'
+    incomingFriendRequest.value = null
+    socket?.send('FRIEND_ACCEPT', roomId.value, {})
+  }
+
+  async function declineFriendRequest() {
+    if (!partnerId.value) return
+    await api.patch(`/api/social/friends/${partnerId.value}`, { accept: false })
+    partnerFriendship.value = 'NONE'
+    incomingFriendRequest.value = null
+    socket?.send('FRIEND_DECLINE', roomId.value, {})
+  }
+
   function dispose() {
     action++
     socket?.close()
@@ -231,6 +284,9 @@ export const useSessionStore = defineStore('session', () => {
     matchStatus,
     roomId,
     partnerId,
+    partnerName,
+    partnerFriendship,
+    incomingFriendRequest,
     partnerCameraEnabled,
     error,
     messages,
@@ -243,6 +299,9 @@ export const useSessionStore = defineStore('session', () => {
     next,
     stop,
     sendChat,
+    sendFriendRequest,
+    acceptFriendRequest,
+    declineFriendRequest,
     dispose,
     dispatch,
     enableMedia

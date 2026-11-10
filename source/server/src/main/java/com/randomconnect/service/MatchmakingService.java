@@ -16,6 +16,8 @@ public class MatchmakingService {
  @org.springframework.beans.factory.annotation.Autowired private ConversationService conversations;
  @org.springframework.beans.factory.annotation.Autowired private com.randomconnect.auth.IdentityService identities;
  @org.springframework.beans.factory.annotation.Autowired private DirectCalls directCalls;
+ @org.springframework.beans.factory.annotation.Autowired private com.randomconnect.persistence.UserRepository users;
+ @org.springframework.beans.factory.annotation.Autowired private com.randomconnect.persistence.SocialConnectionRepository connections;
  private final Object lock=new Object();
  private final Map<String,GuestSession> sessions=new ConcurrentHashMap<>();
  private final LinkedHashSet<String> waiting=new LinkedHashSet<>();
@@ -82,6 +84,10 @@ public class MatchmakingService {
       String peer=rooms.peer(g,m.roomId());if(conversations==null)break;
       var body=conversations.receipt(g.actor,m.roomId(),m.payload().path("messageId").asText(),m.type().equals("MESSAGE_READ")?"READ":"DELIVERED");relay(g,"MESSAGE_STATUS",m.roomId(),body);relay(sessions.get(peer),"MESSAGE_STATUS",m.roomId(),body);
      }
+     case "FRIEND_REQUEST", "FRIEND_ACCEPT", "FRIEND_DECLINE" -> {
+      String peer=rooms.peer(g,m.roomId());
+      relay(sessions.get(peer),m.type(),m.roomId(),m.payload());
+     }
      case "PING" -> emit(g,"PONG",m.requestId(),null,Map.of());
      case "PONG" -> {}
      default -> throw new IllegalArgumentException("INVALID_MESSAGE");
@@ -105,8 +111,26 @@ public class MatchmakingService {
   var room=rooms.create(p,g);
   Map<String,Object> policy=Map.of();
   if(conversations!=null)try{policy=conversations.create(room.id(),p.actor,g.actor);}catch(Exception e){rooms.remove(room.id());p.roomId=g.roomId=null;waiting.add(p.id);error(g.id,request,"INTERNAL_ERROR");return;}
-  var first=new LinkedHashMap<String,Object>(policy);first.put("partnerId",g.guestId);first.put("initiator",true);first.put("iceServers",ice.forGuest(p.guestId));
-  var second=new LinkedHashMap<String,Object>(policy);second.put("partnerId",p.guestId);second.put("initiator",false);second.put("iceServers",ice.forGuest(g.guestId));
+  String gName=null, pName=null, pFriendship="NONE", gFriendship="NONE";
+  if(users!=null){
+   if(g.actor!=null&&g.actor.isUser()) gName=users.findById(g.actor.id()).map(u->u.displayName).orElse(null);
+   if(p.actor!=null&&p.actor.isUser()) pName=users.findById(p.actor.id()).map(u->u.displayName).orElse(null);
+  }
+  if(connections!=null&&p.actor!=null&&p.actor.isUser()&&g.actor!=null&&g.actor.isUser()){
+   String pId=p.actor.id(), gId=g.actor.id();
+   String firstId=pId.compareTo(gId)<0?pId:gId, secondId=firstId.equals(pId)?gId:pId;
+   var conn=connections.findByFirstUserIdAndSecondUserId(firstId,secondId);
+   if(conn.isPresent()){
+    String status=conn.get().friendshipStatus;
+    if("ACCEPTED".equals(status)){pFriendship="ACCEPTED";gFriendship="ACCEPTED";}
+    else if("PENDING".equals(status)){
+     pFriendship=pId.equals(conn.get().requesterId)?"OUTGOING":"INCOMING";
+     gFriendship=gId.equals(conn.get().requesterId)?"OUTGOING":"INCOMING";
+    }
+   }
+  }
+  var first=new LinkedHashMap<String,Object>(policy);first.put("partnerId",g.guestId);if(gName!=null)first.put("partnerName",gName);first.put("partnerFriendship",pFriendship);first.put("initiator",true);first.put("iceServers",ice.forGuest(p.guestId));
+  var second=new LinkedHashMap<String,Object>(policy);second.put("partnerId",p.guestId);if(pName!=null)second.put("partnerName",pName);second.put("partnerFriendship",gFriendship);second.put("initiator",false);second.put("iceServers",ice.forGuest(g.guestId));
   emit(p,"MATCH_FOUND",null,room.id(),first);
   emit(g,"MATCH_FOUND",request,room.id(),second);
  }

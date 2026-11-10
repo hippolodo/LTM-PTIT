@@ -10,10 +10,12 @@ import ChatRoomView from './ChatRoomView.vue'
 import ControlBar from '../components/ControlBar.vue'
 import ConnectionStatus from '../components/ConnectionStatus.vue'
 import ThemeToggle from '../components/ThemeToggle.vue'
+
 const calls = useCallStore()
 const auth = useAuthStore(),
     session = useSessionStore(),
     status = ref('Đang kiểm tra server…')
+
 async function checkHealth() {
     try {
         status.value =
@@ -22,6 +24,7 @@ async function checkHealth() {
         status.value = 'Server chưa khả dụng'
     }
 }
+
 async function signOut() {
     session.stop()
     try {
@@ -30,9 +33,11 @@ async function signOut() {
         session.error = apiError(e)
     }
 }
+
 function unload() {
     session.dispose()
 }
+
 watch(
     () => auth.user?.id || (auth.ready ? 'guest' : ''),
     () => {
@@ -40,49 +45,75 @@ watch(
         if (auth.ready) session.connect()
     },
 )
+
 onMounted(async () => {
     checkHealth()
     window.addEventListener('pagehide', unload)
     await auth.restore()
     if (auth.ready) session.connect()
 })
+
 onBeforeUnmount(() => {
     window.removeEventListener('pagehide', unload)
     session.dispose()
 })
 </script>
+
 <template>
     <main>
         <header>
-            <RouterLink to="/" class="brand"
-                ><span class="brand-icon">↔</span>Random<span
-                    >Connect</span
-                ></RouterLink
-            >
+            <RouterLink to="/" class="brand">
+                <span class="brand-icon">↔</span>Random<span>Connect</span>
+            </RouterLink>
             <div class="header-right">
                 <nav v-if="auth.ready" class="account-nav">
-                    <RouterLink v-if="auth.user" to="/friends"
-                        >Bạn bè & chat riêng</RouterLink
-                    ><RouterLink v-if="auth.user" to="/history"
-                        >Lịch sử</RouterLink
-                    ><RouterLink v-if="auth.user" to="/profile">{{
-                        auth.user.displayName
-                    }}</RouterLink
-                    ><button @click="signOut">
-                        {{ auth.user ? 'Đăng xuất' : 'Đổi tài khoản' }}
+                    <RouterLink v-if="auth.user" to="/friends" class="nav-link-with-icon" title="Bạn bè & Chat riêng">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                        </svg>
+                        <span>Bạn bè </span>
+                    </RouterLink>
+                    <!-- <RouterLink v-if="auth.user" to="/history" class="nav-link-with-icon" title="Lịch sử cuộc trò chuyện">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                        <span>Lịch sử</span>
+                    </RouterLink> -->
+                    <RouterLink v-if="auth.user" to="/profile" class="nav-link-with-icon" title="Hồ sơ cá nhân">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                        </svg>
+                        <span>{{ auth.user.displayName }}</span>
+                    </RouterLink>
+                    <button class="nav-link-with-icon btn-logout" @click="signOut">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                            <polyline points="16 17 21 12 16 7" />
+                            <line x1="21" y1="12" x2="9" y2="12" />
+                        </svg>
+                        <span>{{ auth.user ? 'Đăng xuất' : 'Đổi tài khoản' }}</span>
                     </button>
                 </nav>
                 <button class="server health-button" @click="checkHealth">
-                    {{ status }} ↻</button
-                ><ThemeToggle />
+                    {{ status }} ↻
+                </button>
+                <ThemeToggle />
             </div>
         </header>
+
         <div class="intro">
             <span class="eyebrow">MỘT KẾT NỐI MỚI, MỘT CÂU CHUYỆN MỚI</span>
             <h1>Gặp một người.<br /><em>Mở một câu chuyện.</em></h1>
         </div>
-        <AuthPanel v-if="!auth.ready" /><template v-else
-            ><ConnectionStatus :status="session.matchStatus" />
+
+        <AuthPanel v-if="!auth.ready" />
+        <template v-else>
+            <ConnectionStatus :status="session.matchStatus" />
             <p
                 v-if="session.retentionNotice && session.roomId"
                 class="retention-notice"
@@ -130,11 +161,6 @@ onBeforeUnmount(() => {
                             <span>Bắt đầu kết nối</span>
                         </button>
                     </div>
-                    <!-- <small
-                        >Camera/mic chỉ được truy cập sau thao tác của bạn. Đây
-                        là bản demo nội bộ dành cho người tham gia đồng
-                        ý.</small
-                    > -->
                 </div>
             </section>
             <p v-if="calls.active" role="status">
@@ -152,11 +178,7 @@ onBeforeUnmount(() => {
                 role="alert"
             >
                 {{ session.error || session.mediaError }}
-            </p></template
-        >
-        <!-- <footer>
-            Demo nội bộ · Tôn trọng người đối diện · Bạn có thể dừng bất cứ lúc
-            nào.
-        </footer> -->
+            </p>
+        </template>
     </main>
 </template>

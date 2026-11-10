@@ -1,13 +1,15 @@
 <script setup>
 import { ref, watch } from 'vue'
-import { api, apiError } from '../services/api.js'
+import { apiError } from '../services/api.js'
 import { useSessionStore } from '../stores/sessionStore.js'
+import { useAuthStore } from '../stores/authStore.js'
 import VideoPlayer from '../components/VideoPlayer.vue'
 import ChatBox from '../components/ChatBox.vue'
 
 const session = useSessionStore()
-const friendNotice = ref(''),
-    friendBusy = ref(false)
+const auth = useAuthStore()
+const friendNotice = ref('')
+const friendBusy = ref(false)
 let friendGeneration = 0
 
 watch(
@@ -20,19 +22,45 @@ watch(
 )
 
 async function addFriend() {
-    const token = friendGeneration,
-        peer = session.partnerId
-    if (!session.persistentHistory || !peer || friendBusy.value) return
+    const token = friendGeneration
+    if (!session.persistentHistory || !session.partnerId || friendBusy.value) return
     friendBusy.value = true
     try {
-        const { data } = await api.post(`/api/social/friends/${peer}`)
+        await session.sendFriendRequest(auth.user?.displayName || '')
         if (token === friendGeneration) {
-            friendNotice.value =
-                data.relationship === 'ACCEPTED'
-                    ? 'Hai bạn đã là bạn bè.'
-                    : data.relationship === 'INCOMING'
-                      ? 'Người này đã gửi lời mời. Mở trang Bạn bè để chấp nhận.'
-                      : 'Đã gửi lời mời kết bạn.'
+            friendNotice.value = 'Đã gửi lời mời kết bạn.'
+        }
+    } catch (e) {
+        if (token === friendGeneration) friendNotice.value = apiError(e)
+    } finally {
+        if (token === friendGeneration) friendBusy.value = false
+    }
+}
+
+async function acceptFriend() {
+    const token = friendGeneration
+    if (!session.partnerId || friendBusy.value) return
+    friendBusy.value = true
+    try {
+        await session.acceptFriendRequest()
+        if (token === friendGeneration) {
+            friendNotice.value = 'Hai bạn đã là bạn bè.'
+        }
+    } catch (e) {
+        if (token === friendGeneration) friendNotice.value = apiError(e)
+    } finally {
+        if (token === friendGeneration) friendBusy.value = false
+    }
+}
+
+async function declineFriend() {
+    const token = friendGeneration
+    if (!session.partnerId || friendBusy.value) return
+    friendBusy.value = true
+    try {
+        await session.declineFriendRequest()
+        if (token === friendGeneration) {
+            friendNotice.value = ''
         }
     } catch (e) {
         if (token === friendGeneration) friendNotice.value = apiError(e)
@@ -43,25 +71,106 @@ async function addFriend() {
 </script>
 
 <template>
+    <!-- Popup thông báo kết bạn ở góc trên bên phải (chấp nhận ngay tại màn hình chat, không chuyển trang) -->
+    <teleport to="body">
+        <transition name="toast-slide">
+            <div
+                v-if="session.incomingFriendRequest"
+                class="friend-request-toast"
+                role="alert"
+            >
+                <div class="toast-avatar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <line x1="19" y1="8" x2="19" y2="14" />
+                        <line x1="22" y1="11" x2="16" y2="11" />
+                    </svg>
+                </div>
+                <div class="toast-content">
+                    <div class="toast-header">
+                        <strong>{{ session.incomingFriendRequest.fromUserName || session.partnerName || 'Đối tác' }}</strong>
+                        <span class="toast-badge">Lời mời kết bạn</span>
+                    </div>
+                    <p class="toast-text">Muốn kết bạn với bạn trong cuộc trò chuyện này</p>
+                </div>
+                <div class="toast-actions">
+                    <button class="toast-btn accept" :disabled="friendBusy" @click="acceptFriend">
+                        Chấp nhận
+                    </button>
+                    <button class="toast-btn decline" :disabled="friendBusy" @click="declineFriend">
+                        Bỏ qua
+                    </button>
+                </div>
+            </div>
+        </transition>
+    </teleport>
+
+    <!-- Thanh trạng thái kết bạn phía trên phòng chat (tinh gọn, đẹp mắt) -->
     <div
         v-if="session.roomId && session.persistentHistory"
-        class="partner-friend controls"
+        class="room-social-bar"
     >
-        <button :disabled="friendBusy" @click="addFriend">
-            Kết bạn với người này
-        </button>
-        <span v-if="friendNotice" role="status">{{ friendNotice }}</span>
+        <div class="partner-info-pill">
+            <span class="partner-avatar-dot"></span>
+            <span class="partner-display-title">
+                Đối phương: <strong>{{ session.partnerName || 'Người bạn mới' }}</strong>
+            </span>
+        </div>
+
+        <div class="partner-social-action">
+            <!-- ĐÃ LÀ BẠN BÈ: Không hiện chữ "Kết bạn với người này", hiện huy hiệu Bạn bè -->
+            <div v-if="session.partnerFriendship === 'ACCEPTED'" class="friend-chip accepted">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                    <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span>Đã là bạn bè</span>
+            </div>
+
+            <!-- ĐÃ GỬI LỜI MỜI -->
+            <div v-else-if="session.partnerFriendship === 'OUTGOING'" class="friend-chip outgoing">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                </svg>
+                <span>Đã gửi lời mời kết bạn</span>
+            </div>
+
+            <!-- CÓ LỜI MỜI ĐẾN TỪ ĐỐI PHƯƠNG -->
+            <div v-else-if="session.partnerFriendship === 'INCOMING'" class="friend-chip incoming">
+                <span>{{ session.partnerName || 'Đối tác' }} đã gửi lời mời</span>
+                <button class="chip-btn" :disabled="friendBusy" @click="acceptFriend">Chấp nhận</button>
+            </div>
+
+            <!-- CHƯA KẾT BẠN: Hiện nút kết bạn đẹp mắt có icon -->
+            <button
+                v-else
+                class="btn-friend-request"
+                :disabled="friendBusy"
+                @click="addFriend"
+            >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <line x1="19" y1="8" x2="19" y2="14" />
+                    <line x1="22" y1="11" x2="16" y2="11" />
+                </svg>
+                <span>Kết bạn với người này</span>
+            </button>
+
+            <span v-if="friendNotice" class="friend-notice-msg" role="status">{{ friendNotice }}</span>
+        </div>
     </div>
 
     <div class="workspace">
         <section class="video-stage">
-            <!-- Khi đã có phòng: Hiển thị video đối tác bình thường -->
+            <!-- Khi đã có phòng: Hiển thị video đối tác với tên thật nếu có -->
             <VideoPlayer
                 v-if="session.roomId"
                 :stream="session.remoteStream"
                 :active="session.partnerCameraEnabled"
-                label="Người bạn mới"
-                placeholder="Người bạn mới đang tắt camera"
+                :label="session.partnerName || 'Người bạn mới'"
+                :placeholder="`${session.partnerName || 'Người bạn mới'} đang tắt camera`"
             />
 
             <!-- Khi đang tìm người: Hiển thị hiệu ứng Radar Scanning trực quan -->
@@ -128,11 +237,12 @@ async function addFriend() {
             </div>
         </section>
 
-        <!-- Khung chat bên cạnh -->
+        <!-- Khung chat bên cạnh kèm nhãn tên người bạn mới -->
         <ChatBox
             :room-id="session.roomId"
             :messages="session.messages"
             :guest-id="session.guestId"
+            :peer-label="session.partnerName || 'Người bạn mới'"
             :disabled="!session.roomId"
             @send="session.sendChat"
             @attachment="session.receivedAttachment"
