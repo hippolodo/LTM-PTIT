@@ -1,3 +1,14 @@
+# Sửa nhận diện ghi âm WebM — 2026-11-10
+
+Đã tái hiện lỗi `Unsupported audio format` với WebM/Opus streaming do ffmpeg tạo (không có duration ở container): tika-core nhận diện container cha Matroska, validator cũ từ chối. Sau sửa, fallback chỉ áp dụng cho voice `.webm`, vẫn dùng ffprobe xác minh audio-only và thời lượng.
+
+- Maven verify: **74 tests, 0 failures, 0 errors, 0 skipped**, BUILD SUCCESS.
+- BrowserVoiceTest: WebM/Opus streaming hợp lệ được chấp nhận; WebM có video bị từ chối. Hai test cần ffmpeg và ffprobe, có thể skip trong build stage không cài các executable này.
+- UploadErrorResponseTest: HTTP 400 trả `INVALID_ATTACHMENT` và lỗi audio cụ thể, không gộp thành thông báo sai về kích thước.
+- Chưa kiểm chứng lại trên Render hoặc với file microphone thật của người dùng. Cần push code mới và deploy lại backend để áp dụng.
+
+---
+
 # Kiểm thử file/ghi âm trong chat riêng — 2026-11-10
 
 - Backend Maven verify: **71 tests, 0 failures, 0 errors, 0 skipped**, BUILD SUCCESS. Thêm 5 tests DirectUploadIntegrationTest: multipart HTTP không cần socket, partner/outsider/guest ACL, retry khi chạm quota, xóa object bù nếu hội thoại đóng sau PUT, quota với hai upload đồng thời, voice WAV qua ffprobe và download cho partner.
