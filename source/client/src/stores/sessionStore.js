@@ -7,7 +7,7 @@ import { WebRtcClient } from '../services/webrtcClient.js'
 import { getIceServers } from '../services/iceConfig.js'
 import { useMedia } from '../composables/useMedia.js'
 export const useSessionStore=defineStore('session',()=>{
- const guestId=ref(null),socketStatus=ref('CLOSED'),matchStatus=ref('IDLE'),roomId=ref(null),partnerId=ref(null),error=ref(''),messages=ref([]),busy=ref(false),remoteStream=shallowRef(null),textOnly=ref(false),retentionNotice=ref(''),persistentHistory=ref(false),expiresAt=ref(null)
+ const guestId=ref(null),socketStatus=ref('CLOSED'),matchStatus=ref('IDLE'),roomId=ref(null),partnerId=ref(null),error=ref(''),messages=ref([]),busy=ref(false),remoteStream=shallowRef(null),retentionNotice=ref(''),persistentHistory=ref(false),expiresAt=ref(null)
  const media=useMedia()
  let socket,iceServers=[],serverIceServers,action=0
  const rtc=new WebRtcClient({send:(...args)=>socket?.send(...args),onStream:s=>remoteStream.value=s,onState:s=>matchStatus.value=s,onError:e=>{error.value=e;matchStatus.value='ERROR'}})
@@ -37,11 +37,11 @@ export const useSessionStore=defineStore('session',()=>{
   }catch(e){if(token===action){socketStatus.value='CLOSED';error.value=apiError(e)}}
  }
  async function enableMedia(){error.value='';try{await media.enable()}catch{error.value=media.mediaError.value}}
- async function start(mode=false){
+ async function start(){
   if(busy.value || roomId.value || matchStatus.value==='WAITING' || socketStatus.value!=='OPEN')return
-  const token=++action;busy.value=true;error.value='';textOnly.value=mode
+  const token=++action;busy.value=true;error.value=''
   try {
-   if(mode){media.release();media.mediaError.value=''}else {const stream=await media.enable();if(!stream)return}
+   const stream=await media.enable();if(!stream)return
    iceServers=await getIceServers(serverIceServers);if(token!==action)return
    if(!socket?.send('FIND_PARTNER'))throw new Error('Socket closed')
   }catch{if(token===action){error.value=media.mediaError.value || 'Không thể bắt đầu. Kiểm tra kết nối và cấu hình ICE.';media.release()}}
@@ -52,5 +52,5 @@ export const useSessionStore=defineStore('session',()=>{
  function sendChat(text){text=text.trim();if(!roomId.value || !text || text.length>2000)return false;return socket?.send('CHAT_MESSAGE',roomId.value,{text,clientMessageId:crypto.randomUUID()}) || false}
  function stop(){socket?.send('LEAVE_ROOM',roomId.value);dispose();matchStatus.value='IDLE';error.value=''}
  function dispose(){action++;socket?.close();socket=null;resetRoom();media.release();socketStatus.value='CLOSED';guestId.value=null;busy.value=false}
- return {expiresAt,receivedAttachment,retentionNotice,persistentHistory,guestId,socketStatus,matchStatus,roomId,partnerId,error,messages,busy,remoteStream,textOnly,...media,connect,start,next,stop,sendChat,dispose,dispatch,enableMedia}
+ return {expiresAt,receivedAttachment,retentionNotice,persistentHistory,guestId,socketStatus,matchStatus,roomId,partnerId,error,messages,busy,remoteStream,...media,connect,start,next,stop,sendChat,dispose,dispatch,enableMedia}
 })

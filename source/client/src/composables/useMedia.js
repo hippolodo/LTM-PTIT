@@ -15,7 +15,7 @@ export function useMedia(devices=globalThis.navigator?.mediaDevices) {
     stream.getAudioTracks().forEach(t=>t.enabled=microphoneEnabled.value)
     stream.getVideoTracks().forEach(t=>t.enabled=cameraEnabled.value)
     localStream.value=stream;mediaError.value='';return stream
-   } catch(e){if(token!==generation)return null;mediaError.value=e.name==='NotAllowedError'?'Bạn đã từ chối camera/mic. Hãy cấp quyền trong trình duyệt hoặc chọn Chỉ chat chữ.':e.name==='NotFoundError'?'Không tìm thấy camera/mic. Bạn có thể chọn Chỉ chat chữ.':'Không mở được camera/mic. Cần HTTPS hoặc localhost và thiết bị đang khả dụng.';throw e}
+   } catch(e){if(token!==generation)return null;mediaError.value=e.name==='NotAllowedError'?'Bạn đã từ chối camera/mic. Hãy cấp quyền trong trình duyệt để bắt đầu cuộc gọi.':e.name==='NotFoundError'?'Không tìm thấy camera/mic. Hãy kết nối thiết bị để bắt đầu cuộc gọi.':'Không mở được camera/mic. Cần HTTPS hoặc localhost và thiết bị đang khả dụng.';throw e}
    finally {if(token===generation)pending=null}
   })()
   pending=task;return task

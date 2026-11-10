@@ -13,7 +13,7 @@ Vite dùng cổng 5173 cố định. Backend phải chạy ở 8081; bấm trạ
 
 Chép `.env.example` thành `.env.local` nếu cần đổi `VITE_API_BASE_URL` / `VITE_WS_URL`. Backend mặc định cấp ICE servers qua SESSION_READY và MATCH_FOUND; `VITE_ICE_SERVERS` ghi đè chúng nếu được đặt. `VITE_ICE_CONFIG_URL` tùy chọn gọi endpoint bảo mật của bạn với credentials để lấy ICE config, có độ ưu tiên cao nhất. Không đặt TURN shared secret hay mật khẩu dài hạn trong frontend.
 
-Camera/mic chỉ xin sau nút Enable/Start video. Nếu bị từ chối, cấp lại quyền thủ công hoặc chọn Chỉ chat chữ. Local video muted; remote video có nút phát nếu autoplay bị chặn. Dùng tai nghe khi demo hai tab. Next đóng peer và xóa ICE/remote stream, giữ local track cùng trạng thái enabled; Stop đóng WebSocket và stop local tracks. Stop đóng socket để xử lý cả race khi đang Waiting mà vừa được ghép. Kết nối lại dùng định danh còn hiệu lực và không tự vào queue; không resume room cũ.
+Camera/mic chỉ xin sau nút Enable/Start video. Ghép người lạ yêu cầu mở được camera/mic; nếu bị từ chối, cấp lại quyền trong trình duyệt rồi thử lại. Đã bỏ chế độ Chỉ chat chữ; tin nhắn chữ trong phòng video vẫn được hỗ trợ. Local video muted; remote video có nút phát nếu autoplay bị chặn. Dùng tai nghe khi demo hai tab. Next đóng peer và xóa ICE/remote stream, giữ local track cùng trạng thái enabled; Stop đóng WebSocket và stop local tracks. Stop đóng socket để xử lý cả race khi đang Waiting mà vừa được ghép. Kết nối lại dùng định danh còn hiệu lực và không tự vào queue; không resume room cũ.
 
 `useMedia.js` hủy stream đến muộn sau Stop; `webrtcClient.js` tuần tự hóa SDP/ICE và bỏ callback của generation cũ. Chỉ PeerConnection `connected` mới chuyển UI sang CONNECTED. Chat dùng interpolation, không dùng v-html.
 

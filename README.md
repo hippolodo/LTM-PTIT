@@ -14,7 +14,7 @@
 
 ## Chức năng và chính sách
 
-- Giữ matching/Next/Stop/reconnect, preview camera/mic, text-only, WebRTC signaling và TURN ngắn hạn.
+- Giữ matching/Next/Stop/reconnect, preview camera/mic, WebRTC signaling và TURN ngắn hạn.
 - Đăng ký/đăng nhập, BCrypt, access JWT trong RAM, refresh cookie HttpOnly có rotation/revocation; profile display name.
 - User ↔ User lưu history có phân trang; mỗi người ẩn riêng sau khi kết thúc. Hội thoại có guest hết hạn mặc định 24 giờ và không xuất hiện trong history tài khoản.
 - File PNG/JPEG/WEBP/PDF/TXT/DOCX tối đa 10 MiB; metadata trong DB, binary trong bucket private, URL tải có hạn và kiểm tra thành viên.
