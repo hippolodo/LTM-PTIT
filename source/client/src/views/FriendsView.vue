@@ -7,6 +7,7 @@ import { useCallStore } from '../stores/callStore.js'
 import { api, apiError } from '../services/api.js'
 import ChatBox from '../components/ChatBox.vue'
 import MessageComposer from '../components/MessageComposer.vue'
+import ThemeToggle from '../components/ThemeToggle.vue'
 
 const auth = useAuthStore(), route = useRoute(), chat = reactive(useDirectChat())
 const calls = useCallStore()
@@ -80,7 +81,10 @@ onBeforeUnmount(() => { disposed = true; searchGeneration++; overviewGeneration+
   <main>
     <header>
       <RouterLink class="brand" to="/">← RandomConnect</RouterLink>
-      <nav class="account-nav"><RouterLink to="/history">Lịch sử</RouterLink><RouterLink to="/profile">Hồ sơ</RouterLink></nav>
+      <div class="header-right">
+        <nav class="account-nav"><RouterLink to="/history">Lịch sử</RouterLink><RouterLink to="/profile">Hồ sơ</RouterLink></nav>
+        <ThemeToggle />
+      </div>
     </header>
     <h1>Bạn bè & chat riêng</h1>
     <p>Tìm tài khoản theo username hoặc tên hiển thị. Bạn có thể nhắn tin trước khi kết bạn; chat riêng được lưu cho cả hai.</p>

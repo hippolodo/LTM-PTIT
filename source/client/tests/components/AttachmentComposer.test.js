@@ -1,7 +1,7 @@
 import { createApp, h, reactive, nextTick } from 'vue'
 import { beforeEach, afterEach, it, expect, vi } from 'vitest'
-import AttachmentComposer from './AttachmentComposer.vue'
-import { api } from '../services/api.js'
+import AttachmentComposer from '../../src/components/AttachmentComposer.vue'
+import { api } from '../../src/services/api.js'
 vi.mock('../services/api.js', () => ({ api: { post: vi.fn() }, apiError: () => 'Upload failed' }))
 let app, host, props, sent
 beforeEach(() => {
