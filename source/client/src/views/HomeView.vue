@@ -13,49 +13,48 @@ import ThemeToggle from '../components/ThemeToggle.vue'
 
 const calls = useCallStore()
 const auth = useAuthStore(),
-    session = useSessionStore(),
-    status = ref('Đang kiểm tra server…')
+  session = useSessionStore(),
+  status = ref('Đang kiểm tra server…')
 
 async function checkHealth() {
-    try {
-        status.value =
-            (await health()).status === 'UP' ? 'Server sẵn sàng' : 'Server lỗi'
-    } catch {
-        status.value = 'Server chưa khả dụng'
-    }
+  try {
+    status.value = (await health()).status === 'UP' ? 'Server sẵn sàng' : 'Server lỗi'
+  } catch {
+    status.value = 'Server chưa khả dụng'
+  }
 }
 
 async function signOut() {
-    session.stop()
-    try {
-        await auth.logout()
-    } catch (e) {
-        session.error = apiError(e)
-    }
+  session.stop()
+  try {
+    await auth.logout()
+  } catch (e) {
+    session.error = apiError(e)
+  }
 }
 
 function unload() {
-    session.dispose()
+  session.dispose()
 }
 
 watch(
-    () => auth.user?.id || (auth.ready ? 'guest' : ''),
-    () => {
-        session.stop()
-        if (auth.ready) session.connect()
-    },
+  () => auth.user?.id || (auth.ready ? 'guest' : ''),
+  () => {
+    session.stop()
+    if (auth.ready) session.connect()
+  }
 )
 
 onMounted(async () => {
-    checkHealth()
-    window.addEventListener('pagehide', unload)
-    await auth.restore()
-    if (auth.ready) session.connect()
+  checkHealth()
+  window.addEventListener('pagehide', unload)
+  await auth.restore()
+  if (auth.ready) session.connect()
 })
 
 onBeforeUnmount(() => {
-    window.removeEventListener('pagehide', unload)
-    session.dispose()
+  window.removeEventListener('pagehide', unload)
+  session.dispose()
 })
 </script>
 

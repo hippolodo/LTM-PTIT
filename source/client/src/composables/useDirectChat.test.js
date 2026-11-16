@@ -3,7 +3,10 @@ import { beforeEach, afterEach, expect, it, vi } from 'vitest'
 import { useDirectChat } from './useDirectChat.js'
 import { api } from '../services/api.js'
 
-vi.mock('../services/api.js', () => ({ api: { get: vi.fn(), post: vi.fn() }, apiError: () => 'Request failed' }))
+vi.mock('../services/api.js', () => ({
+  api: { get: vi.fn(), post: vi.fn() },
+  apiError: () => 'Request failed'
+}))
 
 let app, chat, host
 const message = (id, text = id) => ({ messageId: id, sentAt: `2026-11-09T10:00:0${id}.000Z`, text })
@@ -11,12 +14,20 @@ beforeEach(() => {
   vi.useFakeTimers()
   vi.resetAllMocks()
   host = document.createElement('div')
-  app = createApp({ setup() { chat = useDirectChat(); return () => null } })
+  app = createApp({
+    setup() {
+      chat = useDirectChat()
+      return () => null
+    }
+  })
   app.mount(host)
   api.post.mockResolvedValue({ data: { id: 'room', peer: { id: 'peer', displayName: 'Peer' } } })
   api.get.mockResolvedValue({ data: { items: [], hasMore: false } })
 })
-afterEach(() => { app.unmount(); vi.useRealTimers() })
+afterEach(() => {
+  app.unmount()
+  vi.useRealTimers()
+})
 
 it('preserves a failed draft and reuses its ID when retrying', async () => {
   await chat.open({ id: 'peer' })
@@ -34,7 +45,12 @@ it('preserves a failed draft and reuses its ID when retrying', async () => {
 
 it('ignores a slow open response after switching conversations and releases timers', async () => {
   let resolveFirst
-  api.post.mockImplementationOnce(() => new Promise(resolve => { resolveFirst = resolve }))
+  api.post.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        resolveFirst = resolve
+      })
+  )
   const first = chat.open({ id: 'first' })
   api.post.mockResolvedValueOnce({ data: { id: 'second', peer: { id: 'second' } } })
   await chat.open({ id: 'second' })
@@ -55,7 +71,7 @@ it('polls from the server cursor even if a newer own message arrived through POS
   api.get.mockResolvedValueOnce({ data: { items: [message('2'), message('3')], hasMore: false } })
   await vi.advanceTimersByTimeAsync(2000)
   expect(api.get.mock.calls.at(-1)[1].params).toEqual({ after: '1' })
-  expect(chat.messages.value.map(m => m.messageId)).toEqual(['1', '2', '3'])
+  expect(chat.messages.value.map((m) => m.messageId)).toEqual(['1', '2', '3'])
 })
 
 it('loads older messages using a stable cursor and deduplicates response items', async () => {
@@ -64,7 +80,7 @@ it('loads older messages using a stable cursor and deduplicates response items',
   api.get.mockResolvedValueOnce({ data: { items: [message('2'), message('1')], hasMore: false } })
   await chat.older()
   expect(api.get.mock.calls.at(-1)[1].params).toEqual({ before: '2' })
-  expect(chat.messages.value.map(m => m.messageId)).toEqual(['1', '2', '3'])
+  expect(chat.messages.value.map((m) => m.messageId)).toEqual(['1', '2', '3'])
   expect(chat.hasOlder.value).toBe(false)
 })
 
@@ -76,7 +92,7 @@ it('merges a direct upload with polling once and keeps interleaved peer messages
   api.get.mockResolvedValueOnce({ data: { items: [message('2'), file], hasMore: false } })
   await vi.advanceTimersByTimeAsync(2000)
   expect(api.get.mock.calls.at(-1)[1].params).toEqual({ after: '1' })
-  expect(chat.messages.value.map(m => m.messageId)).toEqual(['1', '2', '3'])
+  expect(chat.messages.value.map((m) => m.messageId)).toEqual(['1', '2', '3'])
   chat.receivedAttachment('old-room', { ...message('4'), attachment: { id: 'old-file' } })
   expect(chat.messages.value).toHaveLength(3)
 })

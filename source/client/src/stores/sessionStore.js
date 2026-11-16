@@ -8,20 +8,38 @@ import { getIceServers } from '../services/iceConfig.js'
 import { useMedia } from '../composables/useMedia.js'
 
 export const useSessionStore = defineStore('session', () => {
-  const guestId = ref(null), socketStatus = ref('CLOSED'), matchStatus = ref('IDLE'), roomId = ref(null)
-  const partnerId = ref(null), partnerName = ref(''), partnerFriendship = ref('NONE'), incomingFriendRequest = ref(null)
-  const error = ref(''), messages = ref([]), busy = ref(false)
-  const remoteStream = shallowRef(null), retentionNotice = ref(''), persistentHistory = ref(false), expiresAt = ref(null)
+  const guestId = ref(null),
+    socketStatus = ref('CLOSED'),
+    matchStatus = ref('IDLE'),
+    roomId = ref(null)
+  const partnerId = ref(null),
+    partnerName = ref(''),
+    partnerFriendship = ref('NONE'),
+    incomingFriendRequest = ref(null)
+  const error = ref(''),
+    messages = ref([]),
+    busy = ref(false)
+  const remoteStream = shallowRef(null),
+    retentionNotice = ref(''),
+    persistentHistory = ref(false),
+    expiresAt = ref(null)
   const partnerCameraEnabled = ref(false)
 
   const media = useMedia()
-  let socket, iceServers = [], serverIceServers, action = 0
+  let socket,
+    iceServers = [],
+    serverIceServers,
+    action = 0
 
   const rtc = new WebRtcClient({
     send: (...args) => socket?.send(...args),
-    onStream: s => { remoteStream.value = s },
-    onState: s => { matchStatus.value = s },
-    onData: data => {
+    onStream: (s) => {
+      remoteStream.value = s
+    },
+    onState: (s) => {
+      matchStatus.value = s
+    },
+    onData: (data) => {
       if (data?.type === 'CAMERA_STATE') {
         partnerCameraEnabled.value = !!data.enabled
       }
@@ -29,7 +47,7 @@ export const useSessionStore = defineStore('session', () => {
     onDataChannelOpen: () => {
       rtc.sendData({ type: 'CAMERA_STATE', enabled: media.cameraEnabled.value })
     },
-    onError: e => {
+    onError: (e) => {
       error.value = e
       matchStatus.value = 'ERROR'
     }
@@ -80,16 +98,21 @@ export const useSessionStore = defineStore('session', () => {
           roomId: m.roomId,
           initiator: m.payload.initiator,
           stream: media.localStream.value,
-          iceServers: (import.meta.env.VITE_ICE_CONFIG_URL || import.meta.env.VITE_ICE_SERVERS)
-            ? iceServers
-            : (m.payload.iceServers || iceServers)
+          iceServers:
+            import.meta.env.VITE_ICE_CONFIG_URL || import.meta.env.VITE_ICE_SERVERS
+              ? iceServers
+              : m.payload.iceServers || iceServers
         })
       } catch {
         error.value = 'Trình duyệt không hỗ trợ WebRTC. Chat chữ vẫn sẵn sàng.'
         matchStatus.value = 'ERROR'
       }
     }
-    if (['CHAT_MESSAGE', 'CHAT_FILE', 'CHAT_AUDIO'].includes(m.type) && m.roomId === roomId.value && !messages.value.some(x => x.messageId === m.payload.messageId)) {
+    if (
+      ['CHAT_MESSAGE', 'CHAT_FILE', 'CHAT_AUDIO'].includes(m.type) &&
+      m.roomId === roomId.value &&
+      !messages.value.some((x) => x.messageId === m.payload.messageId)
+    ) {
       messages.value.push(m.payload)
       if (m.payload.senderId !== guestId.value) {
         socket?.send('MESSAGE_DELIVERED', roomId.value, { messageId: m.payload.messageId })
@@ -99,10 +122,13 @@ export const useSessionStore = defineStore('session', () => {
       }
     }
     if (m.type === 'MESSAGE_STATUS' && m.roomId === roomId.value) {
-      const message = messages.value.find(x => x.messageId === m.payload.messageId)
+      const message = messages.value.find((x) => x.messageId === m.payload.messageId)
       if (message) message.status = m.payload.status
     }
-    if (['WEBRTC_OFFER', 'WEBRTC_ANSWER', 'ICE_CANDIDATE'].includes(m.type) && m.roomId === roomId.value) {
+    if (
+      ['WEBRTC_OFFER', 'WEBRTC_ANSWER', 'ICE_CANDIDATE'].includes(m.type) &&
+      m.roomId === roomId.value
+    ) {
       rtc.signal(m)
     }
     if (m.type === 'FRIEND_REQUEST' && m.roomId === roomId.value) {
@@ -149,7 +175,9 @@ export const useSessionStore = defineStore('session', () => {
       socket = new SocketClient({
         url: url.toString(),
         onMessage: dispatch,
-        onError: e => { error.value = e },
+        onError: (e) => {
+          error.value = e
+        },
         onClose: () => {
           socket = null
           action++
@@ -185,7 +213,13 @@ export const useSessionStore = defineStore('session', () => {
   }
 
   async function start() {
-    if (busy.value || roomId.value || matchStatus.value === 'WAITING' || socketStatus.value !== 'OPEN') return
+    if (
+      busy.value ||
+      roomId.value ||
+      matchStatus.value === 'WAITING' ||
+      socketStatus.value !== 'OPEN'
+    )
+      return
     const token = ++action
     busy.value = true
     error.value = ''
@@ -197,7 +231,8 @@ export const useSessionStore = defineStore('session', () => {
       if (!socket?.send('FIND_PARTNER')) throw new Error('Socket closed')
     } catch {
       if (token === action) {
-        error.value = media.mediaError.value || 'Không thể bắt đầu. Kiểm tra kết nối và cấu hình ICE.'
+        error.value =
+          media.mediaError.value || 'Không thể bắt đầu. Kiểm tra kết nối và cấu hình ICE.'
         media.release()
       }
     } finally {
@@ -219,7 +254,7 @@ export const useSessionStore = defineStore('session', () => {
   }
 
   function receivedAttachment(message) {
-    if (roomId.value && !messages.value.some(m => m.messageId === message.messageId)) {
+    if (roomId.value && !messages.value.some((m) => m.messageId === message.messageId)) {
       messages.value.push(message)
     }
   }
@@ -227,7 +262,10 @@ export const useSessionStore = defineStore('session', () => {
   function sendChat(text) {
     text = text.trim()
     if (!roomId.value || !text || text.length > 2000) return false
-    return socket?.send('CHAT_MESSAGE', roomId.value, { text, clientMessageId: crypto.randomUUID() }) || false
+    return (
+      socket?.send('CHAT_MESSAGE', roomId.value, { text, clientMessageId: crypto.randomUUID() }) ||
+      false
+    )
   }
 
   function stop() {

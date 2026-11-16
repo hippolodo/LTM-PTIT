@@ -7,13 +7,25 @@ import { useTheme } from './composables/useTheme.js'
 import DirectCallPanel from './components/DirectCallPanel.vue'
 import FloatingChatWidget from './components/FloatingChatWidget.vue'
 
-const auth = useAuthStore(), calls = useCallStore()
+const auth = useAuthStore(),
+  calls = useCallStore()
 const route = useRoute()
 const { initTheme } = useTheme()
 
-watch(() => auth.user?.id, id => { calls.disconnect(); if (id) calls.connect(id) }, { immediate: true })
-function leave() { calls.disconnect() }
-function resume() { if (auth.user) calls.connect(auth.user.id) }
+watch(
+  () => auth.user?.id,
+  (id) => {
+    calls.disconnect()
+    if (id) calls.connect(id)
+  },
+  { immediate: true }
+)
+function leave() {
+  calls.disconnect()
+}
+function resume() {
+  if (auth.user) calls.connect(auth.user.id)
+}
 
 onMounted(() => {
   initTheme()

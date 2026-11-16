@@ -38,7 +38,9 @@ async function select(c, older = false) {
   error.value = ''
   try {
     const next = older ? messagePage.value + 1 : 0
-    const { data } = await api.get(`/api/conversations/${c.id}/messages`, { params: { page: next } })
+    const { data } = await api.get(`/api/conversations/${c.id}/messages`, {
+      params: { page: next }
+    })
     selected.value = c
     const batch = [...(data.items || [])].reverse()
     messages.value = older ? [...batch, ...messages.value] : batch
@@ -65,12 +67,16 @@ async function hide(c) {
 
 function getPeer(c) {
   if (!c?.participants) return null
-  return c.participants.find(p => p.id !== auth.user?.id)
+  return c.participants.find((p) => p.id !== auth.user?.id)
 }
 
 function getPeerName(c) {
   const peer = getPeer(c)
-  return peer?.displayName || peer?.username || (c?.conversationType === 'DIRECT' ? 'Người bạn' : 'Người lạ')
+  return (
+    peer?.displayName ||
+    peer?.username ||
+    (c?.conversationType === 'DIRECT' ? 'Người bạn' : 'Người lạ')
+  )
 }
 
 function getPeerInitial(c) {

@@ -2,15 +2,29 @@ import { ref, onBeforeUnmount } from 'vue'
 import { api, apiError } from '../services/api.js'
 
 export function useDirectChat() {
-  const selected = ref(null), messages = ref([]), draft = ref(''), error = ref('')
-  const opening = ref(false), sending = ref(false), loadingOlder = ref(false), hasOlder = ref(false)
-  let generation = 0, controller, timer, cursor = null, polling = false, retry = null
+  const selected = ref(null),
+    messages = ref([]),
+    draft = ref(''),
+    error = ref('')
+  const opening = ref(false),
+    sending = ref(false),
+    loadingOlder = ref(false),
+    hasOlder = ref(false)
+  let generation = 0,
+    controller,
+    timer,
+    cursor = null,
+    polling = false,
+    retry = null
 
   function merge(batch) {
-    const byId = new Map(messages.value.map(message => [message.messageId, message]))
+    const byId = new Map(messages.value.map((message) => [message.messageId, message]))
     for (const message of batch) byId.set(message.messageId, message)
-    const time = message => message.sentAt.replace(/(?:\.(\d+))?Z$/, (_, part = '') => `.${part.padEnd(9, '0')}Z`)
-    messages.value = [...byId.values()].sort((a, b) => time(a).localeCompare(time(b)) || a.messageId.localeCompare(b.messageId))
+    const time = (message) =>
+      message.sentAt.replace(/(?:\.(\d+))?Z$/, (_, part = '') => `.${part.padEnd(9, '0')}Z`)
+    messages.value = [...byId.values()].sort(
+      (a, b) => time(a).localeCompare(time(b)) || a.messageId.localeCompare(b.messageId)
+    )
   }
 
   function close() {
@@ -34,11 +48,13 @@ export function useDirectChat() {
       let more = true
       while (more && token === generation) {
         const { data } = await api.get(`/api/social/direct/${selected.value.id}/messages`, {
-          params: cursor ? { after: cursor } : {}, signal: controller.signal
+          params: cursor ? { after: cursor } : {},
+          signal: controller.signal
         })
         if (token !== generation) return
         merge(data.items)
-        if (data.items.length) cursor = cursor ? data.items.at(-1).messageId : data.items[0].messageId
+        if (data.items.length)
+          cursor = cursor ? data.items.at(-1).messageId : data.items[0].messageId
         more = !!cursor && data.items.length > 0 && data.hasMore
         // Without a cursor, the endpoint returns the latest page in descending order.
         if (!data.items.length) more = false
@@ -61,9 +77,15 @@ export function useDirectChat() {
     controller = new AbortController()
     opening.value = true
     try {
-      const { data: thread } = await api.post(`/api/social/direct/${user.id}`, {}, { signal: controller.signal })
+      const { data: thread } = await api.post(
+        `/api/social/direct/${user.id}`,
+        {},
+        { signal: controller.signal }
+      )
       if (token !== generation) return
-      const { data } = await api.get(`/api/social/direct/${thread.id}/messages`, { signal: controller.signal })
+      const { data } = await api.get(`/api/social/direct/${thread.id}/messages`, {
+        signal: controller.signal
+      })
       if (token !== generation) return
       selected.value = thread
       merge(data.items)
@@ -83,7 +105,8 @@ export function useDirectChat() {
     loadingOlder.value = true
     try {
       const { data } = await api.get(`/api/social/direct/${selected.value.id}/messages`, {
-        params: { before: messages.value[0].messageId }, signal: controller.signal
+        params: { before: messages.value[0].messageId },
+        signal: controller.signal
       })
       if (token !== generation) return
       merge(data.items)
@@ -103,7 +126,9 @@ export function useDirectChat() {
     sending.value = true
     error.value = ''
     try {
-      const { data } = await api.post(`/api/social/direct/${selected.value.id}/messages`, retry, { signal: controller.signal })
+      const { data } = await api.post(`/api/social/direct/${selected.value.id}/messages`, retry, {
+        signal: controller.signal
+      })
       if (token !== generation) return
       merge([data])
       if (draft.value.trim() === text) draft.value = ''
@@ -121,5 +146,19 @@ export function useDirectChat() {
   }
 
   onBeforeUnmount(close)
-  return { selected, messages, draft, error, opening, sending, loadingOlder, hasOlder, open, close, older, send, receivedAttachment }
+  return {
+    selected,
+    messages,
+    draft,
+    error,
+    opening,
+    sending,
+    loadingOlder,
+    hasOlder,
+    open,
+    close,
+    older,
+    send,
+    receivedAttachment
+  }
 }

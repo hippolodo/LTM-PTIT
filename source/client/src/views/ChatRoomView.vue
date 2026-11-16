@@ -13,60 +13,60 @@ const friendBusy = ref(false)
 let friendGeneration = 0
 
 watch(
-    () => session.partnerId,
-    () => {
-        friendGeneration++
-        friendNotice.value = ''
-        friendBusy.value = false
-    },
+  () => session.partnerId,
+  () => {
+    friendGeneration++
+    friendNotice.value = ''
+    friendBusy.value = false
+  }
 )
 
 async function addFriend() {
-    const token = friendGeneration
-    if (!session.persistentHistory || !session.partnerId || friendBusy.value) return
-    friendBusy.value = true
-    try {
-        await session.sendFriendRequest(auth.user?.displayName || '')
-        if (token === friendGeneration) {
-            friendNotice.value = 'Đã gửi lời mời kết bạn.'
-        }
-    } catch (e) {
-        if (token === friendGeneration) friendNotice.value = apiError(e)
-    } finally {
-        if (token === friendGeneration) friendBusy.value = false
+  const token = friendGeneration
+  if (!session.persistentHistory || !session.partnerId || friendBusy.value) return
+  friendBusy.value = true
+  try {
+    await session.sendFriendRequest(auth.user?.displayName || '')
+    if (token === friendGeneration) {
+      friendNotice.value = 'Đã gửi lời mời kết bạn.'
     }
+  } catch (e) {
+    if (token === friendGeneration) friendNotice.value = apiError(e)
+  } finally {
+    if (token === friendGeneration) friendBusy.value = false
+  }
 }
 
 async function acceptFriend() {
-    const token = friendGeneration
-    if (!session.partnerId || friendBusy.value) return
-    friendBusy.value = true
-    try {
-        await session.acceptFriendRequest()
-        if (token === friendGeneration) {
-            friendNotice.value = 'Hai bạn đã là bạn bè.'
-        }
-    } catch (e) {
-        if (token === friendGeneration) friendNotice.value = apiError(e)
-    } finally {
-        if (token === friendGeneration) friendBusy.value = false
+  const token = friendGeneration
+  if (!session.partnerId || friendBusy.value) return
+  friendBusy.value = true
+  try {
+    await session.acceptFriendRequest()
+    if (token === friendGeneration) {
+      friendNotice.value = 'Hai bạn đã là bạn bè.'
     }
+  } catch (e) {
+    if (token === friendGeneration) friendNotice.value = apiError(e)
+  } finally {
+    if (token === friendGeneration) friendBusy.value = false
+  }
 }
 
 async function declineFriend() {
-    const token = friendGeneration
-    if (!session.partnerId || friendBusy.value) return
-    friendBusy.value = true
-    try {
-        await session.declineFriendRequest()
-        if (token === friendGeneration) {
-            friendNotice.value = ''
-        }
-    } catch (e) {
-        if (token === friendGeneration) friendNotice.value = apiError(e)
-    } finally {
-        if (token === friendGeneration) friendBusy.value = false
+  const token = friendGeneration
+  if (!session.partnerId || friendBusy.value) return
+  friendBusy.value = true
+  try {
+    await session.declineFriendRequest()
+    if (token === friendGeneration) {
+      friendNotice.value = ''
     }
+  } catch (e) {
+    if (token === friendGeneration) friendNotice.value = apiError(e)
+  } finally {
+    if (token === friendGeneration) friendBusy.value = false
+  }
 }
 </script>
 

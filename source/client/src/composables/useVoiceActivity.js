@@ -1,6 +1,9 @@
 import { ref, watch, onBeforeUnmount } from 'vue'
 
-export function useVoiceActivity(streamSource, { threshold = 12, intervalMs = 60, holdMs = 350 } = {}) {
+export function useVoiceActivity(
+  streamSource,
+  { threshold = 12, intervalMs = 60, holdMs = 350 } = {}
+) {
   const isSpeaking = ref(false)
   let audioCtx = null
   let analyser = null
@@ -18,15 +21,21 @@ export function useVoiceActivity(streamSource, { threshold = 12, intervalMs = 60
       holdTimer = null
     }
     if (source) {
-      try { source.disconnect() } catch {}
+      try {
+        source.disconnect()
+      } catch {}
       source = null
     }
     if (analyser) {
-      try { analyser.disconnect() } catch {}
+      try {
+        analyser.disconnect()
+      } catch {}
       analyser = null
     }
     if (audioCtx && audioCtx.state !== 'closed') {
-      try { audioCtx.close() } catch {}
+      try {
+        audioCtx.close()
+      } catch {}
       audioCtx = null
     }
     isSpeaking.value = false
@@ -80,7 +89,8 @@ export function useVoiceActivity(streamSource, { threshold = 12, intervalMs = 60
   }
 
   watch(
-    () => (typeof streamSource === 'function' ? streamSource() : streamSource?.value ?? streamSource),
+    () =>
+      typeof streamSource === 'function' ? streamSource() : (streamSource?.value ?? streamSource),
     (stream) => setup(stream),
     { immediate: true }
   )

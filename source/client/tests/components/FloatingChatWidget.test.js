@@ -5,10 +5,17 @@ import FloatingChatWidget from '../../src/components/FloatingChatWidget.vue'
 
 vi.mock('../../src/services/api.js', () => ({
   api: {
-    get: vi.fn().mockResolvedValue({ data: { friends: [{ id: 'u1', username: 'testuser', displayName: 'Test User' }], threads: [] } }),
-    post: vi.fn().mockResolvedValue({ data: { id: 'conv-1', peer: { id: 'u1', username: 'testuser', displayName: 'Test User' } } })
+    get: vi.fn().mockResolvedValue({
+      data: {
+        friends: [{ id: 'u1', username: 'testuser', displayName: 'Test User' }],
+        threads: []
+      }
+    }),
+    post: vi.fn().mockResolvedValue({
+      data: { id: 'conv-1', peer: { id: 'u1', username: 'testuser', displayName: 'Test User' } }
+    })
   },
-  apiError: vi.fn(e => e?.message || 'error')
+  apiError: vi.fn((e) => e?.message || 'error')
 }))
 
 vi.mock('vue-router', () => ({

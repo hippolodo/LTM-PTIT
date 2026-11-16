@@ -28,7 +28,7 @@ const progressPercent = computed(() => {
 })
 
 const displayTime = computed(() => {
-  const target = isPlaying.value ? currentTime.value : (audioDuration.value || currentTime.value)
+  const target = isPlaying.value ? currentTime.value : audioDuration.value || currentTime.value
   return formatDuration(target)
 })
 
@@ -254,7 +254,9 @@ onBeforeUnmount(() => {
   border-radius: 14px;
   overflow: hidden;
   max-width: 280px;
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
   line-height: 0;
 }
 .clean-image-container:hover {
@@ -417,7 +419,8 @@ onBeforeUnmount(() => {
 .clean-doc-card:hover .doc-download-action {
   color: #0084ff;
 }
-.doc-spinner, .loading-spin {
+.doc-spinner,
+.loading-spin {
   width: 16px;
   height: 16px;
   border: 2px solid rgba(255, 255, 255, 0.3);
@@ -431,7 +434,9 @@ onBeforeUnmount(() => {
   border-top-color: #0084ff;
 }
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .attachment-error-hint {

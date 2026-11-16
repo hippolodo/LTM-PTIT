@@ -2,7 +2,14 @@
 import { useCallStore } from '../stores/callStore.js'
 import VideoPlayer from './VideoPlayer.vue'
 const calls = useCallStore()
-const labels = { PREPARING: 'Đang mở camera & microphone…', OUTGOING: 'Đang đổ chuông…', INCOMING: 'Cuộc gọi video đến', ACCEPTING: 'Đang mở camera & microphone…', CONNECTING: 'Đang kết nối video…', CONNECTED: 'Đang gọi video' }
+const labels = {
+  PREPARING: 'Đang mở camera & microphone…',
+  OUTGOING: 'Đang đổ chuông…',
+  INCOMING: 'Cuộc gọi video đến',
+  ACCEPTING: 'Đang mở camera & microphone…',
+  CONNECTING: 'Đang kết nối video…',
+  CONNECTED: 'Đang gọi video'
+}
 </script>
 
 <template>

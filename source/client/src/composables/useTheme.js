@@ -20,7 +20,10 @@ export function useTheme() {
     } catch {}
     if (saved === 'light' || saved === 'dark') {
       applyTheme(saved)
-    } else if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: light)').matches) {
+    } else if (
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-color-scheme: light)').matches
+    ) {
       applyTheme('light')
     } else {
       applyTheme('dark')
@@ -34,6 +37,6 @@ export function useTheme() {
   return {
     theme: currentTheme,
     toggleTheme,
-    initTheme,
+    initTheme
   }
 }

@@ -7,7 +7,7 @@ const props = defineProps({
   modelValue: { type: String, default: '' },
   roomId: String,
   disabled: Boolean,
-  sending: Boolean,
+  sending: Boolean
 })
 
 const emit = defineEmits(['update:modelValue', 'send', 'attachment'])
@@ -26,11 +26,14 @@ const recordedAudioFile = ref(null)
 let uploadController = null
 let uploadGeneration = 0
 
-watch(() => voice.blob, (blob) => {
-  if (blob) {
-    recordedAudioFile.value = voice.file()
+watch(
+  () => voice.blob,
+  (blob) => {
+    if (blob) {
+      recordedAudioFile.value = voice.file()
+    }
   }
-})
+)
 
 function clearPendingFile() {
   if (pendingPreview.value) {
@@ -489,10 +492,16 @@ onBeforeUnmount(clearAllAttachments)
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 @keyframes pulse {
-  from { opacity: 0.4; }
-  to { opacity: 1; }
+  from {
+    opacity: 0.4;
+  }
+  to {
+    opacity: 1;
+  }
 }
 </style>

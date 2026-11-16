@@ -68,9 +68,10 @@ const filteredFriends = computed(() => {
   const list = overview.value.friends || []
   const q = searchQuery.value.trim().toLowerCase()
   if (!q) return list
-  return list.filter(f =>
-    (f.displayName && f.displayName.toLowerCase().includes(q)) ||
-    (f.username && f.username.toLowerCase().includes(q))
+  return list.filter(
+    (f) =>
+      (f.displayName && f.displayName.toLowerCase().includes(q)) ||
+      (f.username && f.username.toLowerCase().includes(q))
   )
 })
 
@@ -187,11 +188,14 @@ function toggleVoiceRecord() {
   }
 }
 
-watch(() => voice.blob, (blob) => {
-  if (blob) {
-    recordedAudioFile.value = voice.file()
+watch(
+  () => voice.blob,
+  (blob) => {
+    if (blob) {
+      recordedAudioFile.value = voice.file()
+    }
   }
-})
+)
 
 function clearRecordedAudio() {
   voice.cancel()
@@ -239,18 +243,21 @@ async function handleSend() {
       scrollToBottom()
 
       // Gửi ngầm tới server
-      api.post(`/api/social/direct/${roomId}/messages`, {
-        text,
-        clientMessageId: crypto.randomUUID()
-      }).then(({ data }) => {
-        const idx = chat.messages.findIndex(m => m.messageId === tempId)
-        if (idx !== -1) chat.messages.splice(idx, 1, data)
-      }).catch(e => {
-        const idx = chat.messages.findIndex(m => m.messageId === tempId)
-        if (idx !== -1) chat.messages.splice(idx, 1)
-        chat.draft = text
-        chat.error = apiError(e)
-      })
+      api
+        .post(`/api/social/direct/${roomId}/messages`, {
+          text,
+          clientMessageId: crypto.randomUUID()
+        })
+        .then(({ data }) => {
+          const idx = chat.messages.findIndex((m) => m.messageId === tempId)
+          if (idx !== -1) chat.messages.splice(idx, 1, data)
+        })
+        .catch((e) => {
+          const idx = chat.messages.findIndex((m) => m.messageId === tempId)
+          if (idx !== -1) chat.messages.splice(idx, 1)
+          chat.draft = text
+          chat.error = apiError(e)
+        })
     }
 
     // B. Gửi tệp đính kèm (nếu có)
@@ -300,19 +307,26 @@ function navigateToFriends() {
   router.push('/friends')
 }
 
-watch(() => chat.messages.length, async () => {
-  await nextTick()
-  scrollToBottom()
-})
-
-watch(() => auth.user?.id, (newId) => {
-  if (newId) {
-    startPolling()
-  } else {
-    stopPolling()
-    closeAll()
+watch(
+  () => chat.messages.length,
+  async () => {
+    await nextTick()
+    scrollToBottom()
   }
-}, { immediate: true })
+)
+
+watch(
+  () => auth.user?.id,
+  (newId) => {
+    if (newId) {
+      startPolling()
+    } else {
+      stopPolling()
+      closeAll()
+    }
+  },
+  { immediate: true }
+)
 
 onMounted(() => {
   if (auth.user) startPolling()
@@ -733,7 +747,9 @@ onBeforeUnmount(() => {
   background: linear-gradient(135deg, #10b981 0%, #0d9488 100%) !important;
   color: #ffffff !important;
   border: none !important;
-  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4), 0 2px 6px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    0 8px 24px rgba(16, 185, 129, 0.4),
+    0 2px 6px rgba(0, 0, 0, 0.2);
   cursor: pointer;
   font-family: inherit;
   font-size: 15px;
@@ -745,7 +761,9 @@ onBeforeUnmount(() => {
 
 .floating-chat-fab:hover {
   transform: translateY(-3px) scale(1.03);
-  box-shadow: 0 12px 30px rgba(16, 185, 129, 0.55), 0 4px 10px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 12px 30px rgba(16, 185, 129, 0.55),
+    0 4px 10px rgba(0, 0, 0, 0.3);
   background: linear-gradient(135deg, #059669 0%, #0f766e 100%) !important;
 }
 
@@ -778,7 +796,7 @@ onBeforeUnmount(() => {
   text-align: center;
   padding: 0 5px;
   border: 2px solid var(--bg-panel, #0b111e);
-  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
 /* ==========================================================================
@@ -838,7 +856,9 @@ onBeforeUnmount(() => {
   background: var(--bg-panel, #131d2e);
   border: 1px solid var(--border-color, #26384f);
   border-radius: 16px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4), 0 2px 10px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.4),
+    0 2px 10px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1180,7 +1200,9 @@ onBeforeUnmount(() => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .older-loader {
@@ -1395,8 +1417,14 @@ onBeforeUnmount(() => {
 }
 
 @keyframes pulseRec {
-  from { opacity: 0.4; transform: scale(0.9); }
-  to { opacity: 1; transform: scale(1.1); }
+  from {
+    opacity: 0.4;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.1);
+  }
 }
 
 .rec-text {

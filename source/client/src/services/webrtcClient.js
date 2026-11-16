@@ -1,6 +1,24 @@
 export class WebRtcClient {
-  constructor({ send, onStream, onState, onError, onData, onDataChannelOpen, Peer = globalThis.RTCPeerConnection, Stream = globalThis.MediaStream }) {
-    Object.assign(this, { send, onStream, onState, onError, onData, onDataChannelOpen, Peer, Stream })
+  constructor({
+    send,
+    onStream,
+    onState,
+    onError,
+    onData,
+    onDataChannelOpen,
+    Peer = globalThis.RTCPeerConnection,
+    Stream = globalThis.MediaStream
+  }) {
+    Object.assign(this, {
+      send,
+      onStream,
+      onState,
+      onError,
+      onData,
+      onDataChannelOpen,
+      Peer,
+      Stream
+    })
     this.current = null
   }
 
@@ -45,7 +63,7 @@ export class WebRtcClient {
     this.current = ctx
     const active = () => this.current === ctx
 
-    pc.ondatachannel = event => {
+    pc.ondatachannel = (event) => {
       if (active()) this.setupDataChannel(ctx, event.channel)
     }
 
@@ -55,11 +73,23 @@ export class WebRtcClient {
       pc.addTransceiver?.('video', { direction: 'recvonly' })
     }
 
-    pc.ontrack = event => {
-      if (active()) this.onStream?.(event.streams[0] || new this.Stream(pc.getReceivers().map(r => r.track).filter(Boolean)))
+    pc.ontrack = (event) => {
+      if (active())
+        this.onStream?.(
+          event.streams[0] ||
+            new this.Stream(
+              pc
+                .getReceivers()
+                .map((r) => r.track)
+                .filter(Boolean)
+            )
+        )
     }
-    pc.onicecandidate = event => {
-      if (active() && event.candidate) this.send('ICE_CANDIDATE', roomId, { candidate: event.candidate.toJSON?.() || event.candidate })
+    pc.onicecandidate = (event) => {
+      if (active() && event.candidate)
+        this.send('ICE_CANDIDATE', roomId, {
+          candidate: event.candidate.toJSON?.() || event.candidate
+        })
     }
 
     const failed = () => {
@@ -93,23 +123,29 @@ export class WebRtcClient {
       if (dc) this.setupDataChannel(ctx, dc)
     }
 
-    if (initiator) this.enqueue(ctx, async () => {
-      const offer = await pc.createOffer()
-      if (!active()) return
-      await pc.setLocalDescription(offer)
-      if (active()) this.send('WEBRTC_OFFER', roomId, { sdp: pc.localDescription.toJSON?.() || pc.localDescription })
-    })
+    if (initiator)
+      this.enqueue(ctx, async () => {
+        const offer = await pc.createOffer()
+        if (!active()) return
+        await pc.setLocalDescription(offer)
+        if (active())
+          this.send('WEBRTC_OFFER', roomId, {
+            sdp: pc.localDescription.toJSON?.() || pc.localDescription
+          })
+      })
   }
 
   enqueue(ctx, task) {
-    ctx.chain = ctx.chain.then(() => {
-      if (this.current === ctx) return task()
-    }).catch(() => {
-      if (this.current === ctx) {
-        this.close()
-        this.onError?.('Lỗi thương lượng WebRTC. Hãy chọn Next để thử lại.')
-      }
-    })
+    ctx.chain = ctx.chain
+      .then(() => {
+        if (this.current === ctx) return task()
+      })
+      .catch(() => {
+        if (this.current === ctx) {
+          this.close()
+          this.onError?.('Lỗi thương lượng WebRTC. Hãy chọn Next để thử lại.')
+        }
+      })
     return ctx.chain
   }
 
@@ -117,13 +153,18 @@ export class WebRtcClient {
     const ctx = this.current
     if (!ctx || message.roomId !== ctx.roomId) return Promise.resolve()
     return this.enqueue(ctx, async () => {
-      const active = () => this.current === ctx, pc = ctx.pc
+      const active = () => this.current === ctx,
+        pc = ctx.pc
       if (message.type === 'ICE_CANDIDATE') {
         if (!pc.remoteDescription) ctx.pending.push(message.payload.candidate)
         else await pc.addIceCandidate(message.payload.candidate)
         return
       }
-      if (message.type === 'WEBRTC_OFFER' && (pc.signalingState !== 'stable' || pc.remoteDescription)) return
+      if (
+        message.type === 'WEBRTC_OFFER' &&
+        (pc.signalingState !== 'stable' || pc.remoteDescription)
+      )
+        return
       if (message.type === 'WEBRTC_ANSWER' && pc.signalingState !== 'have-local-offer') return
       await pc.setRemoteDescription(message.payload.sdp)
       if (!active()) return
@@ -135,7 +176,10 @@ export class WebRtcClient {
         const answer = await pc.createAnswer()
         if (!active()) return
         await pc.setLocalDescription(answer)
-        if (active()) this.send('WEBRTC_ANSWER', ctx.roomId, { sdp: pc.localDescription.toJSON?.() || pc.localDescription })
+        if (active())
+          this.send('WEBRTC_ANSWER', ctx.roomId, {
+            sdp: pc.localDescription.toJSON?.() || pc.localDescription
+          })
       }
     })
   }
@@ -147,10 +191,17 @@ export class WebRtcClient {
       clearTimeout(ctx.disconnectTimer)
       clearTimeout(ctx.connectTimer)
       ctx.pending = []
-      try { ctx.dc?.close() } catch {}
+      try {
+        ctx.dc?.close()
+      } catch {}
       ctx.dc = null
       const pc = ctx.pc
-      pc.ontrack = pc.onicecandidate = pc.onconnectionstatechange = pc.oniceconnectionstatechange = pc.ondatachannel = null
+      pc.ontrack =
+        pc.onicecandidate =
+        pc.onconnectionstatechange =
+        pc.oniceconnectionstatechange =
+        pc.ondatachannel =
+          null
       pc.close()
     }
     this.onStream?.(null)

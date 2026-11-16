@@ -8,7 +8,7 @@ const props = defineProps({
   label: String,
   placeholder: String,
   mirrored: Boolean,
-  active: { type: Boolean, default: undefined },
+  active: { type: Boolean, default: undefined }
 })
 
 const video = ref(null)
@@ -21,7 +21,9 @@ let trackListeners = []
 
 function cleanupListeners() {
   trackListeners.forEach(({ track, event, handler }) => {
-    try { track.removeEventListener(event, handler) } catch {}
+    try {
+      track.removeEventListener(event, handler)
+    } catch {}
   })
   trackListeners = []
 }
@@ -34,7 +36,7 @@ function computeHasVideo() {
 
   if (!props.stream) return false
   const tracks = props.stream.getVideoTracks ? props.stream.getVideoTracks() : []
-  const live = tracks.find(t => t.readyState === 'live')
+  const live = tracks.find((t) => t.readyState === 'live')
   if (!live) return false
 
   // Đối với camera của chính mình (local stream): kiểm tra trạng thái enabled
@@ -52,7 +54,7 @@ function updateVideoStatus() {
   if (!props.stream) return
 
   const tracks = props.stream.getVideoTracks ? props.stream.getVideoTracks() : []
-  tracks.forEach(track => {
+  tracks.forEach((track) => {
     const handler = () => {
       hasVideo.value = computeHasVideo()
     }
@@ -67,13 +69,13 @@ function updateVideoStatus() {
 
 function onVideoMetadata() {
   if (props.active === undefined && !props.muted && video.value) {
-    hasVideo.value = computeHasVideo() && (video.value.videoWidth > 0)
+    hasVideo.value = computeHasVideo() && video.value.videoWidth > 0
   }
 }
 
 function onVideoResize() {
   if (props.active === undefined && !props.muted && video.value) {
-    hasVideo.value = computeHasVideo() && (video.value.videoWidth > 0)
+    hasVideo.value = computeHasVideo() && video.value.videoWidth > 0
   }
 }
 

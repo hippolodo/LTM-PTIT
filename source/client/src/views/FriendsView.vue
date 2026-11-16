@@ -9,12 +9,23 @@ import ChatBox from '../components/ChatBox.vue'
 import MessageComposer from '../components/MessageComposer.vue'
 import ThemeToggle from '../components/ThemeToggle.vue'
 
-const auth = useAuthStore(), route = useRoute(), chat = reactive(useDirectChat())
+const auth = useAuthStore(),
+  route = useRoute(),
+  chat = reactive(useDirectChat())
 const calls = useCallStore()
-const query = ref(''), results = ref([]), searched = ref(false), searching = ref(false), error = ref('')
-const overview = ref({ friends: [], incoming: [], outgoing: [], threads: [] }), acting = ref(false)
+const query = ref(''),
+  results = ref([]),
+  searched = ref(false),
+  searching = ref(false),
+  error = ref('')
+const overview = ref({ friends: [], incoming: [], outgoing: [], threads: [] }),
+  acting = ref(false)
 const activeTab = ref('friends') // 'friends', 'incoming', 'search', 'threads'
-let disposed = false, searchGeneration = 0, overviewGeneration = 0, timer, searchController
+let disposed = false,
+  searchGeneration = 0,
+  overviewGeneration = 0,
+  timer,
+  searchController
 
 async function load() {
   const token = ++overviewGeneration
@@ -33,8 +44,15 @@ async function search() {
   searching.value = true
   error.value = ''
   try {
-    const { data } = await api.get('/api/social/users', { params: { q: query.value.trim() }, signal: searchController.signal })
-    if (!disposed && token === searchGeneration) { results.value = data; searched.value = true; activeTab.value = 'search' }
+    const { data } = await api.get('/api/social/users', {
+      params: { q: query.value.trim() },
+      signal: searchController.signal
+    })
+    if (!disposed && token === searchGeneration) {
+      results.value = data
+      searched.value = true
+      activeTab.value = 'search'
+    }
   } catch (e) {
     if (!disposed && token === searchGeneration) error.value = apiError(e)
   } finally {
@@ -55,7 +73,9 @@ async function friendship(user, action) {
     if (searched.value && query.value.trim().length >= 2) await search()
   } catch (e) {
     if (!disposed) error.value = apiError(e)
-  } finally { if (!disposed) acting.value = false }
+  } finally {
+    if (!disposed) acting.value = false
+  }
 }
 
 async function open(user) {
@@ -74,8 +94,17 @@ async function refreshLoop() {
 }
 
 watch(() => route.query.user, openRouteUser)
-onMounted(() => { refreshLoop(); openRouteUser() })
-onBeforeUnmount(() => { disposed = true; searchGeneration++; overviewGeneration++; searchController?.abort(); clearTimeout(timer) })
+onMounted(() => {
+  refreshLoop()
+  openRouteUser()
+})
+onBeforeUnmount(() => {
+  disposed = true
+  searchGeneration++
+  overviewGeneration++
+  searchController?.abort()
+  clearTimeout(timer)
+})
 </script>
 
 <template>

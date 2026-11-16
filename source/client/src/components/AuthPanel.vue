@@ -3,39 +3,39 @@ import { ref } from 'vue'
 import { useAuthStore } from '../stores/authStore.js'
 import { apiError } from '../services/api.js'
 const auth = useAuthStore(),
-    mode = ref('login'),
-    login = ref(''),
-    username = ref(''),
-    email = ref(''),
-    displayName = ref(''),
-    password = ref(''),
-    error = ref('')
+  mode = ref('login'),
+  login = ref(''),
+  username = ref(''),
+  email = ref(''),
+  displayName = ref(''),
+  password = ref(''),
+  error = ref('')
 async function submit() {
-    error.value = ''
-    try {
-        await auth.authenticate(
-            mode.value,
-            mode.value === 'login'
-                ? { login: login.value, password: password.value }
-                : {
-                      username: username.value,
-                      email: email.value,
-                      password: password.value,
-                      displayName: displayName.value,
-                  },
-        )
-        password.value = ''
-    } catch (e) {
-        error.value = apiError(e)
-    }
+  error.value = ''
+  try {
+    await auth.authenticate(
+      mode.value,
+      mode.value === 'login'
+        ? { login: login.value, password: password.value }
+        : {
+            username: username.value,
+            email: email.value,
+            password: password.value,
+            displayName: displayName.value
+          }
+    )
+    password.value = ''
+  } catch (e) {
+    error.value = apiError(e)
+  }
 }
 async function guest() {
-    error.value = ''
-    try {
-        await auth.guest()
-    } catch (e) {
-        error.value = apiError(e)
-    }
+  error.value = ''
+  try {
+    await auth.guest()
+  } catch (e) {
+    error.value = apiError(e)
+  }
 }
 </script>
 <template>
