@@ -267,25 +267,32 @@ onBeforeUnmount(() => {
           </div>
           <p v-if="!overview.incoming.length" class="empty-hint">Không có lời mời kết bạn nào đang chờ.</p>
           <div v-else class="social-user-list">
-            <article v-for="user in overview.incoming" :key="user.id" class="social-user-card highlight-card">
-              <div class="user-avatar-circle">
-                {{ (user.displayName || user.username || 'U')[0].toUpperCase() }}
+            <article v-for="user in overview.incoming" :key="user.id" class="social-user-card highlight-card incoming-card">
+              <div class="user-card-top">
+                <div class="user-avatar-circle">
+                  {{ (user.displayName || user.username || 'U')[0].toUpperCase() }}
+                </div>
+                <div class="user-meta">
+                  <strong class="user-display-name">{{ user.displayName || user.username }}</strong>
+                  <small class="user-handle">@{{ user.username }}</small>
+                </div>
               </div>
-              <div class="user-meta">
-                <strong class="user-display-name">{{ user.displayName || user.username }}</strong>
-                <small class="user-handle">@{{ user.username }}</small>
-              </div>
-              <div class="social-card-actions">
-                <button class="primary sm-btn" :disabled="acting" @click="friendship(user, 'accept')">
+              <div class="social-card-actions incoming-actions">
+                <button class="primary sm-btn action-accept" :disabled="acting" @click="friendship(user, 'accept')">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                   <span>Chấp nhận</span>
                 </button>
-                <button class="danger-ghost sm-btn" :disabled="acting" @click="friendship(user, 'decline')">
+                <button class="danger-ghost sm-btn action-decline" :disabled="acting" @click="friendship(user, 'decline')">
                   <span>Từ chối</span>
                 </button>
-                <button class="ghost sm-btn" @click="open(user)">Chat</button>
+                <button class="ghost sm-btn action-chat" title="Nhắn tin" @click="open(user)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  </svg>
+                  <span>Chat</span>
+                </button>
               </div>
             </article>
           </div>
@@ -298,7 +305,7 @@ onBeforeUnmount(() => {
                   {{ (user.displayName || user.username || 'U')[0].toUpperCase() }}
                 </div>
                 <div class="user-meta">
-                  <strong class="user-display-name">{{ user.displayName }}</strong>
+                  <strong class="user-display-name">{{ user.displayName || user.username }}</strong>
                   <small class="user-handle">@{{ user.username }}</small>
                 </div>
                 <div class="social-card-actions">
