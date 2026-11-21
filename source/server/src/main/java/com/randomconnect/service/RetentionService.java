@@ -1,6 +1,7 @@
 package com.randomconnect.service;
 
-import com.randomconnect.persistence.*;
+import com.randomconnect.entity.*;
+import com.randomconnect.repository.*;
 import com.randomconnect.auth.*;
 import com.randomconnect.storage.StorageService;
 import org.springframework.stereotype.Service;

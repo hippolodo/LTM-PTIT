@@ -1,7 +1,8 @@
 package com.randomconnect.service;
 
 import com.randomconnect.auth.*;
-import com.randomconnect.persistence.*;
+import com.randomconnect.entity.*;
+import com.randomconnect.repository.*;
 import java.util.*;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.PageRequest;

@@ -2,7 +2,8 @@ package com.randomconnect;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.randomconnect.auth.*;
-import com.randomconnect.persistence.*;
+import com.randomconnect.entity.*;
+import com.randomconnect.repository.*;
 
 import com.randomconnect.service.*;
 import com.randomconnect.storage.*;

@@ -1,4 +1,6 @@
-package com.randomconnect.persistence;
+package com.randomconnect.repository;
+
+import com.randomconnect.entity.SocialConnection;
 
 import java.util.*;
 import org.springframework.data.jpa.repository.*;

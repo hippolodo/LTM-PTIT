@@ -1,4 +1,6 @@
-package com.randomconnect.persistence;
+package com.randomconnect.repository;
+
+import com.randomconnect.entity.UserAccount;
 
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;

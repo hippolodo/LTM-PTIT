@@ -1,4 +1,4 @@
-package com.randomconnect.persistence;
+package com.randomconnect.entity;
 
 import jakarta.persistence.*;
 

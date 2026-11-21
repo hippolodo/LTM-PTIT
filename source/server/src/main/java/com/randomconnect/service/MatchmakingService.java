@@ -26,10 +26,10 @@ public class MatchmakingService {
   private DirectCalls directCalls;
 
   @org.springframework.beans.factory.annotation.Autowired
-  private com.randomconnect.persistence.UserRepository users;
+  private com.randomconnect.repository.UserRepository users;
 
   @org.springframework.beans.factory.annotation.Autowired
-  private com.randomconnect.persistence.SocialConnectionRepository connections;
+  private com.randomconnect.repository.SocialConnectionRepository connections;
 
   private final Object lock = new Object();
   private final Map<String, GuestSession> sessions = new ConcurrentHashMap<>();

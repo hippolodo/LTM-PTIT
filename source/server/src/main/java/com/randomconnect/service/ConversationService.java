@@ -1,7 +1,8 @@
 package com.randomconnect.service;
 
 import com.randomconnect.auth.*;
-import com.randomconnect.persistence.*;
+import com.randomconnect.entity.*;
+import com.randomconnect.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.annotation.Transactional;

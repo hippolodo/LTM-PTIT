@@ -1,7 +1,8 @@
 package com.randomconnect;
 
 import com.fasterxml.jackson.databind.*;
-import com.randomconnect.persistence.*;
+import com.randomconnect.entity.*;
+import com.randomconnect.repository.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 

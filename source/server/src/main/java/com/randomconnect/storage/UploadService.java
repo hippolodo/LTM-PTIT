@@ -1,7 +1,8 @@
 package com.randomconnect.storage;
 
 import com.randomconnect.auth.*;
-import com.randomconnect.persistence.*;
+import com.randomconnect.entity.*;
+import com.randomconnect.repository.*;
 import com.randomconnect.service.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;

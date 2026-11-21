@@ -107,7 +107,7 @@ onBeforeUnmount(() => {
 
         <div class="intro">
             <span class="eyebrow">MỘT KẾT NỐI MỚI, MỘT CÂU CHUYỆN MỚI</span>
-            <h1>Gặp một người.<br /><em>Mở một câu chuyện.</em></h1>
+            <!-- <h1>Gặp một người.<br /><em>Mở một câu chuyện.</em></h1> -->
         </div>
 
         <AuthPanel v-if="!auth.ready" />
