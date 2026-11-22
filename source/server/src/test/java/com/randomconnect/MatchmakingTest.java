@@ -156,6 +156,32 @@ class MatchmakingTest {
   }
 
   @Test
+  void next_partnerCanAutomaticallyQueueWithoutImmediatelyRematchingRequester() throws Exception {
+    pair();
+    String old = room("a");
+    send("a", "NEXT_PARTNER", old, Map.of());
+    send("b", "FIND_PARTNER");
+    assertThat(service.snapshot()).containsEntry("rooms", 0).containsEntry("waiting", 2);
+    assertThat(count("a", "MATCH_FOUND")).isEqualTo(1);
+    assertThat(count("b", "MATCH_FOUND")).isEqualTo(1);
+    assertThat(events.get("b").stream()
+      .filter(e -> "PARTNER_LEFT".equals(e.path("type").asText()))
+      .findFirst().orElseThrow().path("payload").path("reason").asText()).isEqualTo("NEXT");
+    send(guest("c"), "FIND_PARTNER");
+    assertThat(service.snapshot()).containsEntry("rooms", 1).containsEntry("waiting", 1);
+    assertThat(count("c", "MATCH_FOUND")).isEqualTo(1);
+  }
+
+  @Test
+  void stopAfterAutomaticQueueingRemovesRemainingParticipant() throws Exception {
+    pair();
+    send("a", "NEXT_PARTNER", room("a"), Map.of());
+    send("b", "FIND_PARTNER");
+    send("b", "LEAVE_ROOM");
+    assertThat(service.snapshot()).containsEntry("rooms", 0).containsEntry("waiting", 1);
+  }
+
+  @Test
   void stop_doesNotRequeue() throws Exception {
     pair();
     send("a", "LEAVE_ROOM", room("a"), Map.of());

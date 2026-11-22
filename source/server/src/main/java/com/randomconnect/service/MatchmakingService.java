@@ -254,6 +254,11 @@ public class MatchmakingService {
     var candidates = waiting
       .stream()
       .filter(id -> !id.equals(g.id))
+      .filter(id -> {
+        var candidate = sessions.get(id);
+        return !candidate.guestId.equals(g.skippedPartnerId) &&
+          !g.guestId.equals(candidate.skippedPartnerId);
+      })
       .toList();
     if (candidates.isEmpty()) {
       waiting.add(g.id);
@@ -338,6 +343,10 @@ public class MatchmakingService {
     var peer = sessions.get(r.peer(g.id));
     if (peer != null) {
       peer.roomId = null;
+      if ("NEXT".equals(reason)) {
+        g.skippedPartnerId = peer.guestId;
+        peer.skippedPartnerId = g.guestId;
+      }
       emit(peer, "PARTNER_LEFT", null, r.id(), Map.of("reason", reason));
     }
   }

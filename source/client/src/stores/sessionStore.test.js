@@ -76,3 +76,51 @@ it('partner leaves without automatic rematching', async () => {
   expect(s.matchStatus).toBe('PARTNER_LEFT')
   expect(fakes.socket.send).not.toHaveBeenCalled()
 })
+
+it.each(['NEXT', 'STOP'])('automatically queues after partner %s while preserving media and the socket', async (reason) => {
+  const s = useSessionStore()
+  await s.connect()
+  s.dispatch({ type: 'SESSION_READY', payload: { guestId: 'me' } })
+  const stopTrack = vi.fn()
+  const stream = { getTracks: () => [{ stop: stopTrack }] }
+  s.localStream = stream
+  s.dispatch({ type: 'MATCH_FOUND', roomId: 'one', payload: { partnerId: 'peer' } })
+  s.dispatch({ type: 'PARTNER_LEFT', roomId: 'old', payload: { reason } })
+  expect(fakes.socket.send).not.toHaveBeenCalled()
+  s.dispatch({ type: 'PARTNER_LEFT', roomId: 'one', payload: { reason } })
+  expect(s.roomId).toBeNull()
+  expect(s.matchStatus).toBe('WAITING')
+  expect(s.localStream).toBe(stream)
+  expect(stopTrack).not.toHaveBeenCalled()
+  expect(fakes.socket.close).not.toHaveBeenCalled()
+  expect(fakes.socket.send).toHaveBeenCalledExactlyOnceWith('FIND_PARTNER')
+  s.stop()
+  expect(stopTrack).toHaveBeenCalledOnce()
+  expect(s.matchStatus).toBe('IDLE')
+})
+
+it('does not automatically queue when a partner event arrives after the user stops', async () => {
+  const s = useSessionStore()
+  await s.connect()
+  s.dispatch({ type: 'SESSION_READY', payload: { guestId: 'me' } })
+  s.dispatch({ type: 'MATCH_FOUND', roomId: 'one', payload: { partnerId: 'peer' } })
+  const socket = fakes.socket
+  s.stop()
+  socket.send.mockClear()
+  s.dispatch({ type: 'PARTNER_LEFT', roomId: 'one', payload: { reason: 'STOP' } })
+  expect(socket.send).not.toHaveBeenCalled()
+  expect(s.matchStatus).toBe('IDLE')
+  expect(s.socketStatus).toBe('CLOSED')
+})
+
+it('releases media and reports failure if automatic queueing cannot send', async () => {
+  const s = useSessionStore()
+  await s.connect()
+  s.dispatch({ type: 'SESSION_READY', payload: { guestId: 'me' } })
+  s.dispatch({ type: 'MATCH_FOUND', roomId: 'one', payload: { partnerId: 'peer' } })
+  fakes.socket.send.mockReturnValue(false)
+  s.dispatch({ type: 'PARTNER_LEFT', roomId: 'one', payload: { reason: 'NEXT' } })
+  expect(s.matchStatus).toBe('ERROR')
+  expect(s.error).not.toBe('')
+  expect(s.localStream).toBeNull()
+})

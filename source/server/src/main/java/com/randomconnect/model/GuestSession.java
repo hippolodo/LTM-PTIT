@@ -9,6 +9,7 @@ public class GuestSession {
   public final String id, guestId;
   public final com.randomconnect.auth.Actor actor;
   public String roomId;
+  public String skippedPartnerId;
   public long lastSeen = System.currentTimeMillis(),
     windowStart = lastSeen;
   public int envelopes, matches, chats;

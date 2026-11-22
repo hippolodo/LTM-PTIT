@@ -148,9 +148,19 @@ export const useSessionStore = defineStore('session', () => {
     }
     if (m.type === 'PARTNER_LEFT' && m.roomId === roomId.value) {
       resetRoom()
-      media.release()
-      matchStatus.value = 'PARTNER_LEFT'
       busy.value = false
+      if (['NEXT', 'STOP'].includes(m.payload?.reason) && socketStatus.value === 'OPEN') {
+        error.value = ''
+        matchStatus.value = 'WAITING'
+        if (!socket?.send('FIND_PARTNER')) {
+          media.release()
+          matchStatus.value = 'ERROR'
+          error.value = 'Không thể tìm đối tác mới. Hãy kiểm tra kết nối.'
+        }
+      } else {
+        media.release()
+        matchStatus.value = 'PARTNER_LEFT'
+      }
     }
     if (m.type === 'ROOM_CLOSED' && (!roomId.value || m.roomId === roomId.value)) {
       resetRoom()

@@ -119,7 +119,10 @@ class SocketIntegrationTest {
       c.send("CHAT_MESSAGE", room, Map.of("text", "intruder"));
       assertThat(c.event("ERROR").path("payload").path("code").asText()).isEqualTo("NOT_IN_ROOM");
       a.send("NEXT_PARTNER", room, Map.of());
-      b.event("PARTNER_LEFT");
+      assertThat(b.event("PARTNER_LEFT").path("payload").path("reason").asText()).isEqualTo("NEXT");
+      // The frontend automatically requests another partner after this event.
+      b.send("FIND_PARTNER", null, Map.of());
+      b.event("WAITING");
       a.event("ROOM_CLOSED");
       String next = a.event("MATCH_FOUND").path("roomId").asText();
       assertThat(c.event("MATCH_FOUND").path("roomId").asText()).isEqualTo(next);
@@ -129,13 +132,14 @@ class SocketIntegrationTest {
       c.send("LEAVE_ROOM", next, Map.of());
       c.event("ROOM_CLOSED");
       a.event("PARTNER_LEFT");
-      a.send("FIND_PARTNER", null, Map.of());
-      a.event("WAITING");
-      b.send("FIND_PARTNER", null, Map.of());
-      a.event("MATCH_FOUND");
-      b.event("MATCH_FOUND");
-      b.close();
-      a.event("PARTNER_LEFT");
+      try (var d = new Client("http://localhost:5173")) {
+        d.event("SESSION_READY");
+        d.send("FIND_PARTNER", null, Map.of());
+        String remainingRoom = b.event("MATCH_FOUND").path("roomId").asText();
+        assertThat(d.event("MATCH_FOUND").path("roomId").asText()).isEqualTo(remainingRoom);
+        b.close();
+        d.event("PARTNER_LEFT");
+      }
     }
   }
 
