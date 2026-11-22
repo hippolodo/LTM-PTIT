@@ -4,6 +4,7 @@
 !pom.xml
 !mvnw
 !.mvn/
+!.mvn/settings-render.xml
 !.mvn/wrapper/
 !.mvn/wrapper/maven-wrapper.properties
 !src/

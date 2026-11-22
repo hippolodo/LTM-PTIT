@@ -4,6 +4,11 @@
 FROM eclipse-temurin:21-jdk-jammy AS build
 WORKDIR /workspace
 
+# Use the Google-hosted Central mirror for the wrapper and Maven dependencies/plugins.
+# This setting applies only to the build stage, not the running application.
+ENV MVNW_REPOURL=https://maven-central.storage-download.googleapis.com/maven2
+COPY .mvn/settings-render.xml /root/.m2/settings.xml
+
 COPY .mvn/wrapper/maven-wrapper.properties .mvn/wrapper/maven-wrapper.properties
 COPY --chmod=0755 mvnw ./mvnw
 COPY pom.xml ./pom.xml
